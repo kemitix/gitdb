@@ -1,10 +1,10 @@
-package net.kemitix.gitfs;
+package net.kemitix.gitdb;
 
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class GitFsTest {
+class GitDBTest {
 
     @Test
     void dummy() {
