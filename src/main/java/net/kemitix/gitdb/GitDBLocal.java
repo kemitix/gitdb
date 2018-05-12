@@ -53,7 +53,7 @@ class GitDBLocal implements GitDB {
 
     @Override
     public <T> T save(Branch branch, Message message, Document<T> document, Author author) {
-        return null;
+        return document.getValue();
     }
 
     @Override
