@@ -21,7 +21,7 @@ class GitDBTest {
     private final Branch master = Branch.name("master");
     private final Message message = Message.message(UUID.randomUUID().toString());
     private final Key key = Key.name(UUID.randomUUID().toString());
-    private final Author author = Author.name("junit");
+    private final Author author = Author.name("junit", "gitdb@kemitix.net");
 
     GitDBTest() throws IOException, GitAPIException {
     }

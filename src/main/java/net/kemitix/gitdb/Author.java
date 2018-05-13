@@ -1,13 +1,17 @@
 package net.kemitix.gitdb;
 
-import net.kemitix.mon.TypeAlias;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-public class Author extends TypeAlias<String> {
-    protected Author(String value) {
-        super(value);
-    }
+@RequiredArgsConstructor
+public class Author {
 
-    public static Author name(final String name) {
-        return new Author(name);
+    @Getter
+    private final String name;
+    @Getter
+    private final String email;
+
+    public static Author name(final String name, final String email) {
+        return new Author(name, email);
     }
 }
