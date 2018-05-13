@@ -11,8 +11,6 @@ public interface GitDB {
 
     void close();
 
-    Path getGitDir();
-
     String get(Branch branch, Key key);
 
     <T> T get(Branch branch, Key key, Class<T> type);

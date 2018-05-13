@@ -1,29 +1,46 @@
 package net.kemitix.gitdb;
 
-import lombok.Getter;
+import lombok.SneakyThrows;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 class GitDBLocal implements GitDB {
 
-    @Getter
     private final Repository repository;
 
-    @Getter
-    private final Path gitDir;
+    @SneakyThrows
+    GitDBLocal(final Path gitDir) {
+        this.repository = openRepo(gitDir)
+                .orElseGet(() -> initRepo(gitDir));
+    }
 
-    GitDBLocal(final Path gitDir) throws GitAPIException {
-        this.gitDir = gitDir;
-        this.repository = Git
-                .init()
-                .setBare(true)
+    @SneakyThrows
+    private Repository initRepo(Path gitDir) {
+        return Git.init()
                 .setGitDir(gitDir.toFile())
+                .setBare(true)
                 .call()
                 .getRepository();
+    }
+
+    private Optional<Repository> openRepo(final Path gitDir) throws IOException {
+        final Repository build = new FileRepositoryBuilder()
+                .setBare()
+                .setMustExist(false)
+                .setGitDir(gitDir.toFile())
+                .setup()
+                .build();
+        if (build.getObjectDatabase().exists()) {
+            return Optional.of(build);
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Override
@@ -33,7 +50,7 @@ class GitDBLocal implements GitDB {
 
     @Override
     public String get(Branch branch, Key key) {
-        return null;
+        return get(branch, key, String.class);
     }
 
     @Override
@@ -43,7 +60,7 @@ class GitDBLocal implements GitDB {
 
     @Override
     public Stream<String> getFiles(Branch branch, Key key) {
-        return null;
+        return getFiles(branch, key, String.class);
     }
 
     @Override
