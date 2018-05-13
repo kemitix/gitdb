@@ -52,7 +52,7 @@ class GitDBLocal implements GitDB {
     }
 
     @Override
-    public <T> T save(Branch branch, Message message, Document<T> document, Author author) {
+    public String save(Branch branch, Message message, Document<String> document, Author author) {
         return document.getValue();
     }
 

@@ -1,20 +1,15 @@
 package net.kemitix.gitdb;
 
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.Repository;
-
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
 public interface GitDB {
 
-    static GitDB local(Path dbDir) throws GitAPIException {
+    static GitDB local(Path dbDir) {
         return new GitDBLocal(dbDir);
     }
 
     void close();
-
-    Repository getRepository();
 
     Path getGitDir();
 
@@ -26,7 +21,7 @@ public interface GitDB {
 
     <T> Stream<T> getFiles(Branch branch, Key key, Class<T> type);
 
-    <T> T save(Branch branch, Message message, Document<T> document, Author author);
+    String save(Branch branch, Message message, Document<String> document, Author author);
 
     String delete(Branch branch, Key key, Message message, Author author);
 
