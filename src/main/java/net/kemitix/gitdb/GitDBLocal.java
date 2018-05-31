@@ -1,36 +1,27 @@
 package net.kemitix.gitdb;
 
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.*;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-
-import java.io.*;
-import java.nio.file.Path;
-import java.util.Optional;
-import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 class GitDBLocal implements GitDB {
 
     private final Git git;
 
-    @Override
-    public void close() {
-        git.close();
-    }
+//    @Override
+//    public void close() {
+//        git.close();
+//    }
 
-    @Override
-    public GitDbBranch branch(Branch branch) {
-        return null;
-    }
-
-    @Override
-    public Stream<Branch> allBranches() {
-        return null;
-    }
+//    @Override
+//    public GitDbBranch branch(Branch branch) {
+//        return null;
+//    }
+//
+//    @Override
+//    public Stream<Branch> allBranches() {
+//        return null;
+//    }
 
 //    @Override
 //    public String get(Branch branch, Key key) {

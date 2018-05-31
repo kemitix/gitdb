@@ -3,22 +3,11 @@ package net.kemitix.gitdb;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.stream.Stream;
 
-public interface GitDB extends Closeable {
-
-    /**
-     * Open an existing local gitdb.
-     *
-     * @param dbDir the path to the local repo
-     * @return a GitDB instance for the local gitdb
-     */
-    static GitDB local(final Path dbDir) throws IOException {
-        return new GitDBLocal(Git.open(dbDir.toFile()));
-    }
+public interface GitDB
+//        extends Closeable
+{
 
     /**
      * Initialise a new local gitdb.
@@ -33,15 +22,25 @@ public interface GitDB extends Closeable {
                 .call());
     }
 
-    /**
-     * Select a branch.
-     *
-     * @param branch the branch to select
-     * @return a branch within the gitdb
-     */
-    GitDbBranch branch(Branch branch);
+//    /**
+//     * Open an existing local gitdb.
+//     *
+//     * @param dbDir the path to the local repo
+//     * @return a GitDB instance for the local gitdb
+//     */
+//    static GitDB local(final Path dbDir) throws IOException {
+//        return new GitDBLocal(Git.open(dbDir.toFile()));
+//    }
 
-    interface GitDbBranch {
+//    /**
+//     * Select a branch.
+//     *
+//     * @param branch the branch to select
+//     * @return a branch within the gitdb
+//     */
+//    GitDbBranch branch(Branch branch);
+
+//    interface GitDbBranch {
 
 //        String get(Key key);
 //
@@ -57,8 +56,8 @@ public interface GitDB extends Closeable {
 //
 //        GitDbBranch fork(Branch branch);
 
-    }
+//    }
 
-    Stream<Branch> allBranches();
+//    Stream<Branch> allBranches();
 
 }

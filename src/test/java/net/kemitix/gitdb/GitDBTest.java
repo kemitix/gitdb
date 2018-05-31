@@ -8,16 +8,15 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class GitDBTest {
 
-    private final Branch master = Branch.name("master");
-    private final Message message = Message.message(UUID.randomUUID().toString());
-    private final Key key = Key.name(UUID.randomUUID().toString());
-    private final Author author = Author.name("junit", "gitdb@kemitix.net");
+//    private final Branch master = Branch.name("master");
+//    private final Message message = Message.message(UUID.randomUUID().toString());
+//    private final Key key = Key.name(UUID.randomUUID().toString());
+//    private final Author author = Author.name("junit", "gitdb@kemitix.net");
 
     // When initialising a repo in a dir that doesn't exist then a bare repo is created
     @Test
