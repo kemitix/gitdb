@@ -10,6 +10,9 @@
 
     <properties>
         <java.version>8</java.version>
+        <tiles-maven-plugin.version>2.10</tiles-maven-plugin.version>
+        <kemitix-tiles.version>0.8.1</kemitix-tiles.version>
+        <kemitix-checkstyle.version>4.1.1</kemitix-checkstyle.version>
         <lombok.version>1.16.20</lombok.version>
         <jgit.version>4.11.0.201803080745-r</jgit.version>
         <junit.version>5.2.0</junit.version>
@@ -68,11 +71,16 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <groupId>io.repaint.maven</groupId>
+                <artifactId>tiles-maven-plugin</artifactId>
+                <version>${tiles-maven-plugin.version}</version>
+                <extensions>true</extensions>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <tiles>
+                        <tile>net.kemitix.tiles:all:${kemitix-tiles.version}</tile>
+                        <tile>net.kemitix.tiles:pmd-strict:${kemitix-tiles.version}</tile>
+                        <tile>net.kemitix.checkstyle:tile:${kemitix-checkstyle.version}</tile>
+                    </tiles>
                 </configuration>
             </plugin>
         </plugins>
