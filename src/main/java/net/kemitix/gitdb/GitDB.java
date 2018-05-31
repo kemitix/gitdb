@@ -27,6 +27,11 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.nio.file.Path;
 
+/**
+ * Main API for connecting to a Git repo as a database.
+ *
+ * @author Paul Campbell (pcampbell@kemitix.net)
+ */
 public interface GitDB {
 
     /**
@@ -34,6 +39,7 @@ public interface GitDB {
      *
      * @param dbDir the path to initialise the local repo in
      * @return a GitDB instance for the created local gitdb
+     * @throws GitAPIException if there is an error initialising the Git repo
      */
     static GitDB initLocal(final Path dbDir) throws GitAPIException {
         final InitCommand initCommand = Git.init().setGitDir(dbDir.toFile()).setBare(true);

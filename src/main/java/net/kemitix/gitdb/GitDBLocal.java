@@ -24,6 +24,11 @@ package net.kemitix.gitdb;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.jgit.api.Git;
 
+/**
+ * Implementation of GitDB for working with a local Repo.
+ *
+ * @author Paul Campbell (pcampbell@kemitix.net)
+ */
 @RequiredArgsConstructor
 class GitDBLocal implements GitDB {
 
