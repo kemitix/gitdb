@@ -1,6 +1,7 @@
 package net.kemitix.gitdb;
 
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.nio.file.Path;
@@ -16,10 +17,9 @@ public interface GitDB
      * @return a GitDB instance for the created local gitdb
      */
     static GitDB initLocal(final Path dbDir) throws GitAPIException {
-        return new GitDBLocal(Git.init()
-                .setGitDir(dbDir.toFile())
-                .setBare(true)
-                .call());
+        final InitCommand initCommand = Git.init().setGitDir(dbDir.toFile()).setBare(true);
+        final Git git = initCommand.call();
+        return new GitDBLocal(git);
     }
 
 //    /**
