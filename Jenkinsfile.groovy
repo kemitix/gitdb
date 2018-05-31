@@ -21,11 +21,11 @@ pipeline {
                 withMaven(maven: 'maven', jdk: 'JDK LTS') {
                     sh "${mvn} clean compile checkstyle:checkstyle pmd:pmd test"
                     //junit '**/target/surefire-reports/*.xml'
-                    sh "${mvn} jacoco:report com.gavinmogan:codacy-maven-plugin:coverage " +
-                            "-DcoverageReportFile=target/site/jacoco/jacoco.xml " +
-                            "-DprojectToken=`$JENKINS_HOME/codacy/token` " +
-                            "-DapiToken=`$JENKINS_HOME/codacy/apitoken` " +
-                            "-Dcommit=`git rev-parse HEAD`"
+                    //sh "${mvn} jacoco:report com.gavinmogan:codacy-maven-plugin:coverage " +
+                    //        "-DcoverageReportFile=target/site/jacoco/jacoco.xml " +
+                    //        "-DprojectToken=`$JENKINS_HOME/codacy/token` " +
+                    //        "-DapiToken=`$JENKINS_HOME/codacy/apitoken` " +
+                    //        "-Dcommit=`git rev-parse HEAD`"
                     jacoco exclusionPattern: '**/*{Test|IT|Main|Application|Immutable}.class'
                     pmd canComputeNew: false, defaultEncoding: '', healthy: '', pattern: '', unHealthy: ''
                     step([$class: 'hudson.plugins.checkstyle.CheckStylePublisher',
