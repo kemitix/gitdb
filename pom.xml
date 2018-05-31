@@ -14,6 +14,7 @@
         <jgit.version>4.11.0.201803080745-r</jgit.version>
         <junit.version>5.2.0</junit.version>
         <assertj.version>3.9.1</assertj.version>
+        <mon.version>0.4.0</mon.version>
     </properties>
 
     <dependencies>
@@ -25,7 +26,7 @@
         <dependency>
             <groupId>net.kemitix</groupId>
             <artifactId>mon</artifactId>
-            <version>0.4.0</version>
+            <version>${mon.version}</version>
         </dependency>
 
         <dependency>
