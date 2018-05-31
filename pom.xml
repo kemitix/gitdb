@@ -80,7 +80,7 @@
                 <configuration>
                     <tiles>
                         <tile>net.kemitix.tiles:all:${kemitix-tiles.version}</tile>
-                        <tile>net.kemitix.tiles:pmd-strict:${kemitix-tiles.version}</tile>
+                        <!--<tile>net.kemitix.tiles:pmd-strict:${kemitix-tiles.version}</tile>-->
                         <tile>net.kemitix.checkstyle:tile:${kemitix-checkstyle.version}</tile>
                     </tiles>
                 </configuration>
