@@ -1,33 +1,64 @@
 package net.kemitix.gitdb;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-public interface GitDB {
+public interface GitDB extends Closeable {
 
-    static GitDB local(Path dbDir) {
-        return new GitDBLocal(dbDir);
+    /**
+     * Open an existing local gitdb.
+     *
+     * @param dbDir the path to the local repo
+     * @return a GitDB instance for the local gitdb
+     */
+    static GitDB local(final Path dbDir) throws IOException {
+        return new GitDBLocal(Git.open(dbDir.toFile()));
     }
 
-    void close();
+    /**
+     * Initialise a new local gitdb.
+     *
+     * @param dbDir the path to initialise the local repo in
+     * @return a GitDB instance for the created local gitdb
+     */
+    static GitDB initLocal(final Path dbDir) throws GitAPIException {
+        return new GitDBLocal(Git.init()
+                .setGitDir(dbDir.toFile())
+                .setBare(true)
+                .call());
+    }
 
-    String get(Branch branch, Key key);
+    /**
+     * Select a branch.
+     *
+     * @param branch the branch to select
+     * @return a branch within the gitdb
+     */
+    GitDbBranch branch(Branch branch);
 
-    <T> T get(Branch branch, Key key, Class<T> type);
+    interface GitDbBranch {
 
-    Stream<String> getFiles(Branch branch, Key key);
+//        String get(Key key);
+//
+//        <T> T get(Key key, Class<T> type);
+//
+//        Key put(Message message, Document<String> document, Author author);
+//
+//        GitDbBranch delete(Branch branch, Key key, Message message, Author author);
+//
+//        GitDbBranch tag(Reference reference);
+//
+//        Transaction startTransaction(Branch branch);
+//
+//        GitDbBranch fork(Branch branch);
 
-    <T> Stream<T> getFiles(Branch branch, Key key, Class<T> type);
+    }
 
-    String save(Branch branch, Message message, Document<String> document, Author author);
+    Stream<Branch> allBranches();
 
-    String delete(Branch branch, Key key, Message message, Author author);
-
-    void tag(Reference reference);
-
-    void createBranch(Reference reference);
-
-    Stream<String> getAllBranches();
-
-    Transaction createTransaction(Branch branch);
 }
