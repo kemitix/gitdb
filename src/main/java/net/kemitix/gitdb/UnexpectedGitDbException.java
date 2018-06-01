@@ -21,27 +21,25 @@
 
 package net.kemitix.gitdb;
 
-import org.eclipse.jgit.api.Git;
-
-import java.nio.file.NotDirectoryException;
-import java.nio.file.Path;
-
 /**
- * Main API for connecting to a Git repo as a database.
+ * Unchecked exception thrown when JGit throws a an unexpected exception.
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
-public interface GitDB {
+public class UnexpectedGitDbException extends RuntimeException {
 
     /**
-     * Initialise a new local gitdb.
+     * Constructs an instance of this class.
      *
-     * @param dbDir the path to initialise the local repo in
-     * @return a GitDB instance for the created local gitdb
-     * @throws NotDirectoryException if {@code dbDir} it is not a directory
+     * @param message the detail message. The detail message is saved for
+     *                later retrieval by the {@link #getMessage()} method.
+     * @param cause   the cause (which is saved for later retrieval by the
+     *                {@link #getCause()} method).  (A <tt>null</tt> value is
+     *                permitted, and indicates that the cause is nonexistent or
+     *                unknown.)
      */
-    static GitDB initLocal(final Path dbDir) throws NotDirectoryException {
-        return new GitDBLocal(Git.init(), dbDir.toFile());
+    public UnexpectedGitDbException(final String message, final Throwable cause) {
+        super(message, cause);
     }
 
 }

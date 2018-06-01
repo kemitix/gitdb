@@ -21,18 +21,41 @@
 
 package net.kemitix.gitdb;
 
-import lombok.RequiredArgsConstructor;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.InitCommand;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.JGitInternalException;
+
+import java.io.File;
+import java.nio.file.NotDirectoryException;
 
 /**
  * Implementation of GitDB for working with a local Repo.
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
-@RequiredArgsConstructor
+
 class GitDBLocal implements GitDB {
 
     private final Git git;
+
+    /**
+     * Constructors a new instance of this class.
+     *
+     * @param initCommand a JGit InitCommand
+     * @param dbDir       the path to instantiate the git repo in
+     * @throws NotDirectoryException if {@code dbDir} it is not a directory
+     */
+    @SuppressWarnings("avoidhidingcauseexception")
+    GitDBLocal(final InitCommand initCommand, final File dbDir) throws NotDirectoryException {
+        try {
+            this.git = initCommand.setGitDir(dbDir).setBare(true).call();
+        } catch (JGitInternalException e) {
+            throw new NotDirectoryException(dbDir.toString());
+        } catch (GitAPIException e) {
+            throw new UnexpectedGitDbException("Unhandled Git API Exception", e);
+        }
+    }
 
     //    @Override
     //    @SneakyThrows

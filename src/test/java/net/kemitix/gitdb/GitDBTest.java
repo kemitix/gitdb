@@ -1,17 +1,24 @@
 package net.kemitix.gitdb;
 
+import org.assertj.core.api.WithAssertions;
+import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 
-class GitDBTest {
+@ExtendWith(MockitoExtension.class)
+class GitDBTest implements WithAssertions {
 
 //    private final Branch master = Branch.name("master");
 //    private final Message message = Message.message(UUID.randomUUID().toString());
@@ -20,13 +27,13 @@ class GitDBTest {
 
     // When initialising a repo in a dir that doesn't exist then a bare repo is created
     @Test
-    void initRepo_whenDirNotExist_thenCreateBareRepo() throws IOException, GitAPIException {
+    void initRepo_whenDirNotExist_thenCreateBareRepo() throws IOException {
         //given
         final Path dir = dirDoesNotExist();
         //when
-        final GitDB gitdb = GitDB.initLocal(dir);
+        final GitDB gitDB = GitDB.initLocal(dir);
         //then
-        assertThat(gitdb).isNotNull();
+        assertThat(gitDB).isNotNull();
         assertThatIsBareRepo(dir);
     }
 
@@ -52,19 +59,43 @@ class GitDBTest {
         return directory;
     }
 
+    // When initialising a repo and an unexpected error occurs then an exception is thrown
+    @Test
+    void initRepo_whenUnexpectedError_thenThrowException() throws IOException, GitAPIException {
+        //given
+        final Path dbDir = dirDoesNotExist();
+        final InitCommand initCommand = spy(InitCommand.class);
+        given(initCommand.call()).willThrow(mock(GitAPIException.class));
+        //then
+        assertThatExceptionOfType(UnexpectedGitDbException.class)
+                .isThrownBy(() -> new GitDBLocal(initCommand, dbDir.toFile()))
+                .withMessageContaining("Unhandled Git API Exception");
+    }
+
     // When initialising a repo in a dir that is a file then an exception is thrown
     @Test
-    void initRepo_whenDirIsFile_thenThrowException() {
+    void initRepo_whenDirIsFile_thenThrowException() throws IOException {
+        //given
+        final Path dir = fileExists();
+        //then
+        assertThatExceptionOfType(NotDirectoryException.class)
+                .isThrownBy(() -> GitDB.initLocal(dir))
+                .withMessageContaining(dir.toString());
+    }
+
+    private Path fileExists() throws IOException {
+        return Files.createTempFile("gitdb", "file");
     }
 
     // When initialising a repo in a dir is exists then an exception is thrown
-    @Test
-    void initRepo_whenDirExists_thenThrowException() {
-    }
+    //@Test
+    //void initRepo_whenDirExists_thenThrowException() {
+    //}
 
-    // When opening a repo in a dir that doesn't exist then an exception is thrown
-    // When opening a repo in a dir that is a file then an exception is thrown
     // When opening a repo in a dir that is not a bare repo then an exception is thrown
+    // When opening a repo in a dir that is a file then an exception is thrown
+    // When opening a repo in a dir that doesn't exist then an exception is thrown
+
     // When opening a repo in a dir that is a bare repo then GitDb is returned
 
     // Given a valid GitDb handle
