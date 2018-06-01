@@ -22,6 +22,7 @@
 package net.kemitix.gitdb;
 
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.errors.RepositoryNotFoundException;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -47,4 +48,12 @@ public interface GitDB {
         );
     }
 
+    static GitDBLocal openLocal(final Path dbDir) throws IOException {
+        try {
+            final Git git = Git.open(dbDir.toFile());
+            return new GitDBLocal(git);
+        } catch (RepositoryNotFoundException e) {
+            throw new GitDbRepoNotFoundException(dbDir, e);
+        }
+    }
 }

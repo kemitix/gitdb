@@ -58,6 +58,10 @@ class GitDBLocal implements GitDB {
         }
     }
 
+    GitDBLocal(final Git git) {
+        this.git = git;
+    }
+
     private void validateDbDir(final File dbDir) throws IOException {
         verifyIsNotAFile(dbDir);
         if (dbDir.exists()) {

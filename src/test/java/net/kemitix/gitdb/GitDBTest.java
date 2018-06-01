@@ -6,14 +6,11 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -120,6 +117,16 @@ class GitDBTest implements WithAssertions {
     }
 
     // When opening a repo in a dir that is not a bare repo then an exception is thrown
+    @Test
+    void openRepo_NotBareRepo_thenThrowException() throws IOException {
+        //given
+        final Path dir = dirExists();
+        //then
+        assertThatExceptionOfType(GitDbRepoNotFoundException.class)
+                .isThrownBy(() -> GitDB.openLocal(dir))
+                .withMessageContaining(dir.toString());
+    }
+
     // When opening a repo in a dir that is a file then an exception is thrown
     // When opening a repo in a dir that doesn't exist then an exception is thrown
 
