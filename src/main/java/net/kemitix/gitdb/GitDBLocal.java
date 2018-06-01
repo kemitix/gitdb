@@ -24,9 +24,11 @@ package net.kemitix.gitdb;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.JGitInternalException;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 
 /**
@@ -44,17 +46,39 @@ class GitDBLocal implements GitDB {
      *
      * @param initCommand a JGit InitCommand
      * @param dbDir       the path to instantiate the git repo in
-     * @throws NotDirectoryException if {@code dbDir} it is not a directory
+     * @throws IOException if there {@code dbDir} is a file or a non-empty directory
      */
     @SuppressWarnings("avoidhidingcauseexception")
-    GitDBLocal(final InitCommand initCommand, final File dbDir) throws NotDirectoryException {
+    GitDBLocal(final InitCommand initCommand, final File dbDir) throws IOException {
+        validateDbDir(dbDir);
         try {
-            this.git = initCommand.setGitDir(dbDir).setBare(true).call();
-        } catch (JGitInternalException e) {
-            throw new NotDirectoryException(dbDir.toString());
+            this.git = initRepo(initCommand, dbDir);
         } catch (GitAPIException e) {
             throw new UnexpectedGitDbException("Unhandled Git API Exception", e);
         }
+    }
+
+    private void validateDbDir(final File dbDir) throws IOException {
+        verifyIsNotAFile(dbDir);
+        if (dbDir.exists()) {
+            verifyIsEmpty(dbDir);
+        }
+    }
+
+    private static void verifyIsEmpty(final File dbDir) throws IOException {
+        if (Files.newDirectoryStream(dbDir.toPath()).iterator().hasNext()) {
+            throw new DirectoryNotEmptyException(dbDir.toString());
+        }
+    }
+
+    private static void verifyIsNotAFile(final File dbDir) throws NotDirectoryException {
+        if (dbDir.isFile()) {
+            throw new NotDirectoryException(dbDir.toString());
+        }
+    }
+
+    private static Git initRepo(final InitCommand initCommand, final File dbDir) throws GitAPIException {
+        return initCommand.setGitDir(dbDir).setBare(true).call();
     }
 
     //    @Override

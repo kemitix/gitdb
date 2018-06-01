@@ -87,10 +87,37 @@ class GitDBTest implements WithAssertions {
         return Files.createTempFile("gitdb", "file");
     }
 
-    // When initialising a repo in a dir is exists then an exception is thrown
-    //@Test
-    //void initRepo_whenDirExists_thenThrowException() {
-    //}
+    // When initialising a repo in a non-empty dir then an exception is thrown
+    @Test
+    void initRepo_whenNotEmptyDir_thenThrowException() throws IOException {
+        //given
+        final Path dir = dirExists();
+        filesExistIn(dir);
+        //then
+        assertThatExceptionOfType(DirectoryNotEmptyException.class)
+                .isThrownBy(() -> GitDB.initLocal(dir))
+                .withMessageContaining(dir.toString());
+    }
+
+    private void filesExistIn(final Path dir) throws IOException {
+        Files.createTempFile(dir, "gitdb", "file");
+    }
+
+    private Path dirExists() throws IOException {
+        return Files.createTempDirectory("gitdb");
+    }
+
+    // When initialising a repo in a empty dir then a bare repo is created
+    @Test
+    void initRepo_whenEmptyDir_thenCreateBareRepo() throws IOException {
+        //given
+        final Path dir = dirExists();
+        //when
+        final GitDB gitDB = GitDB.initLocal(dir);
+        //then
+        assertThat(gitDB).isNotNull();
+        assertThatIsBareRepo(dir);
+    }
 
     // When opening a repo in a dir that is not a bare repo then an exception is thrown
     // When opening a repo in a dir that is a file then an exception is thrown

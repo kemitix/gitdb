@@ -23,7 +23,7 @@ package net.kemitix.gitdb;
 
 import org.eclipse.jgit.api.Git;
 
-import java.nio.file.NotDirectoryException;
+import java.io.IOException;
 import java.nio.file.Path;
 
 /**
@@ -38,10 +38,13 @@ public interface GitDB {
      *
      * @param dbDir the path to initialise the local repo in
      * @return a GitDB instance for the created local gitdb
-     * @throws NotDirectoryException if {@code dbDir} it is not a directory
+     * @throws IOException if there {@code dbDir} is a file or a non-empty directory
      */
-    static GitDB initLocal(final Path dbDir) throws NotDirectoryException {
-        return new GitDBLocal(Git.init(), dbDir.toFile());
+    static GitDB initLocal(final Path dbDir) throws IOException {
+        return new GitDBLocal(
+                Git.init(),
+                dbDir.toFile()
+        );
     }
 
 }
