@@ -47,7 +47,9 @@ class GitDBTest {
     }
 
     private Path dirDoesNotExist() throws IOException {
-        return Files.createTempDirectory("gitdb");
+        final Path directory = Files.createTempDirectory("gitdb");
+        Files.delete(directory);
+        return directory;
     }
 
     // When initialising a repo in a dir that is a file then an exception is thrown
