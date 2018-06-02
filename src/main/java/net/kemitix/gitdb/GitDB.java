@@ -48,6 +48,13 @@ public interface GitDB {
         );
     }
 
+    /**
+     * Open an existing local gitdb.
+     *
+     * @param dbDir the path to open as a local repo
+     * @return a GitDB instance for the local gitdb
+     * @throws IOException if there {@code dbDir} is a file, the directory does not exist or is not a repo
+     */
     static GitDBLocal openLocal(final Path dbDir) throws IOException {
         try {
             final Git git = Git.open(dbDir.toFile());
