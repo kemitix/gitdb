@@ -4,6 +4,7 @@ import org.assertj.core.api.WithAssertions;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.Constants;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -37,19 +38,9 @@ class GitDBTest implements WithAssertions {
     }
 
     private void assertThatIsBareRepo(final Path dbDir) throws IOException {
-        final DirectoryStream<Path> paths = Files.newDirectoryStream(dbDir);
-        assertThat(paths.iterator())
-                .contains(
-                        dbDir.resolve("branches"),
-                        dbDir.resolve("HEAD"),
-                        dbDir.resolve("config"),
-                        dbDir.resolve("refs"),
-                        dbDir.resolve("logs"),
-                        dbDir.resolve("hooks"),
-                        dbDir.resolve("objects")
-                );
-        final List<String> config = Files.readAllLines(dbDir.resolve("config"));
-        assertThat(config).contains("\tbare = true");
+        final Git git = Git.open(dbDir.toFile());
+        assertThat(git.getRepository().findRef(Constants.HEAD)).isNotNull();
+        assertThat(git.getRepository().isBare()).isTrue();
     }
 
     private Path dirDoesNotExist() throws IOException {
