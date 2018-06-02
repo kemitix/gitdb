@@ -21,14 +21,10 @@
 
 package net.kemitix.gitdb;
 
-//import net.kemitix.mon.TypeAlias;
-
-//public class Branch extends TypeAlias<String> {
-//    protected Branch(final String value) {
-//        super(value);
-//    }
-//
-//    static Branch name(final String name) {
-//        return new Branch(name);
-//    }
-//}
+/**
+ * API for interacting with a branch in a GirDB.
+ *
+ * @author Paul Campbell (pcampbell@kemitix.net)
+ */
+public interface GitDBBranch {
+}

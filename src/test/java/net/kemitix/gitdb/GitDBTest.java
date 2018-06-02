@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -173,21 +174,35 @@ class GitDBTest implements WithAssertions {
     @Test
     void openRepo_whenGitDB_thenReturnGitDB() throws IOException {
         //given
-        final Path dir = gitDBRepo();
+        final Path dir = gitDBRepoPath();
         //when
         final GitDBLocal gitDB = GitDB.openLocal(dir);
         //then
         assertThat(gitDB).isNotNull();
     }
 
-    private Path gitDBRepo() throws IOException {
+    private Path gitDBRepoPath() throws IOException {
         final Path dbDir = dirDoesNotExist();
         GitDB.initLocal(dbDir);
         return dbDir;
     }
 
     // Given a valid GitDb handle
-    // When select a branch that doesn't exist then an exception is thrown
+    // When select a branch that doesn't exist then an empty Optional is returned
+    @Test
+    void selectBranch_branchNotExist_thenEmptyOptional() throws IOException {
+        //given
+        final GitDB gitDb = newGitDBRepo();
+        //when
+        final Optional<GitDBBranch> branch = gitDb.branch("unknown");
+        //then
+        assertThat(branch).isEmpty();
+    }
+
+    private GitDB newGitDBRepo() throws IOException {
+        return GitDB.initLocal(dirDoesNotExist());
+    }
+
     // When select a valid branch then a GitDbBranch is returned
 
     // Given a valid GitDbBranch handle

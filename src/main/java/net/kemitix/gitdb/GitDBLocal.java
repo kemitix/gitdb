@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
+import java.util.Optional;
 
 /**
  * Implementation of GitDB for working with a local Repo.
@@ -97,6 +98,11 @@ class GitDBLocal implements GitDB {
 
     private static Git initRepo(final InitCommand initCommand, final File dbDir) throws GitAPIException {
         return initCommand.setGitDir(dbDir).setBare(true).call();
+    }
+
+    @Override
+    public Optional<GitDBBranch> branch(final String name) {
+        return Optional.empty();
     }
 
     //    @Override

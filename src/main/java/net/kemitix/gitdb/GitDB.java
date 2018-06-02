@@ -26,6 +26,7 @@ import org.eclipse.jgit.errors.RepositoryNotFoundException;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Optional;
 
 /**
  * Main API for connecting to a Git repo as a database.
@@ -63,4 +64,12 @@ public interface GitDB {
             throw new GitDBRepoNotFoundException(dbDir, e);
         }
     }
+
+    /**
+     * Select the named branch.
+     *
+     * @param name the branch to select
+     * @return an Optional containing the branch if it exists
+     */
+    Optional<GitDBBranch> branch(String name);
 }
