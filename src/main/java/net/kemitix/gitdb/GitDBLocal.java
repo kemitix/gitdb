@@ -24,6 +24,7 @@ package net.kemitix.gitdb;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.Repository;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +43,7 @@ class GitDBLocal implements GitDB {
     private final Git git;
 
     /**
-     * Constructors a new instance of this class.
+     * Create a new GitDB instance, while initialising a new git repo.
      *
      * @param initCommand a JGit InitCommand
      * @param dbDir       the path to instantiate the git repo in
@@ -58,8 +59,21 @@ class GitDBLocal implements GitDB {
         }
     }
 
+    /**
+     * Create a new GitDB instance using the Git repo.
+     *
+     * @param git the Git handle for the repo
+     */
     GitDBLocal(final Git git) {
-        this.git = git;
+        this.git = verifyIsBareRepo(git);
+    }
+
+    private static Git verifyIsBareRepo(final Git git) {
+        final Repository repository = git.getRepository();
+        if (repository.isBare()) {
+            return git;
+        }
+        throw new InvalidRepositoryException("Not a bare repo", repository.getDirectory().toPath());
     }
 
     private void validateDbDir(final File dbDir) throws IOException {
