@@ -150,6 +150,21 @@ class GitDBTest implements WithAssertions {
     }
 
     // When opening a repo in a dir that is a bare repo then GitDb is returned
+    @Test
+    void openRepo_whenGitDB_thenReturnGitDB() throws IOException {
+        //given
+        final Path dir = gitDBRepo();
+        //when
+        final GitDBLocal gitDB = GitDB.openLocal(dir);
+        //then
+        assertThat(gitDB).isNotNull();
+    }
+
+    private Path gitDBRepo() throws IOException {
+        final Path dbDir = dirDoesNotExist();
+        GitDB.initLocal(dbDir);
+        return dbDir;
+    }
 
     // Given a valid GitDb handle
     // When select a branch that doesn't exist then an exception is thrown
