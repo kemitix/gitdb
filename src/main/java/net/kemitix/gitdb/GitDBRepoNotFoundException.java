@@ -9,15 +9,14 @@ import java.nio.file.Path;
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
-public class GitDbRepoNotFoundException extends RuntimeException {
+public class GitDBRepoNotFoundException extends RuntimeException {
 
     /**
      * Constructor.
      *
-     * @param path the path that is not a valid GitDB repo
      * @param cause the original exception
      */
-    GitDbRepoNotFoundException(final Path path, final RepositoryNotFoundException cause) {
-        super(cause);
+    GitDBRepoNotFoundException(final Path path, final RepositoryNotFoundException cause) {
+        super(String.format("GitDB repo not found: %s", path.toString()), cause);
     }
 }

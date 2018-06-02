@@ -53,7 +53,7 @@ public interface GitDB {
             final Git git = Git.open(dbDir.toFile());
             return new GitDBLocal(git);
         } catch (RepositoryNotFoundException e) {
-            throw new GitDbRepoNotFoundException(dbDir, e);
+            throw new GitDBRepoNotFoundException(dbDir, e);
         }
     }
 }

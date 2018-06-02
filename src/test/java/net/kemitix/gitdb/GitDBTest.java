@@ -122,8 +122,9 @@ class GitDBTest implements WithAssertions {
         //given
         final Path dir = dirExists();
         //then
-        assertThatExceptionOfType(GitDbRepoNotFoundException.class)
+        assertThatExceptionOfType(GitDBRepoNotFoundException.class)
                 .isThrownBy(() -> GitDB.openLocal(dir))
+                .withMessageContaining("GitDB repo not found")
                 .withMessageContaining(dir.toString());
     }
 
