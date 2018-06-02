@@ -1,6 +1,7 @@
 package net.kemitix.gitdb;
 
 import org.assertj.core.api.WithAssertions;
+import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.jupiter.api.Test;
@@ -147,6 +148,25 @@ class GitDBTest implements WithAssertions {
         assertThatExceptionOfType(GitDBRepoNotFoundException.class)
                 .isThrownBy(() -> GitDB.openLocal(dir))
                 .withMessageContaining(dir.toString());
+    }
+
+    // When opening a repo in a dir that is not a bare repo then an exception is thrown
+    @Test
+    void openRepo_whenRepoNotBare_thenThrowException() throws IOException, GitAPIException {
+        //given
+        final Path dir = nonBareRepo();
+        //then
+        assertThatExceptionOfType(InvalidRepositoryException.class)
+                .isThrownBy(() -> GitDB.openLocal(dir))
+                .withMessageContaining("Invalid GitDB repo")
+                .withMessageContaining("Not a bare repo")
+                .withMessageContaining(dir.toString());
+    }
+
+    private Path nonBareRepo() throws IOException, GitAPIException {
+        final Path dbDir = dirDoesNotExist();
+        Git.init().setGitDir(dbDir.toFile()).setBare(false).call();
+        return dbDir;
     }
 
     // When opening a repo in a dir that is a bare repo then GitDb is returned

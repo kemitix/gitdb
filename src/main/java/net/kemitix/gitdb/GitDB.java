@@ -53,14 +53,21 @@ public interface GitDB {
      *
      * @param dbDir the path to open as a local repo
      * @return a GitDB instance for the local gitdb
-     * @throws IOException if there {@code dbDir} is a file, the directory does not exist or is not a repo
+     * @throws IOException if there {@code dbDir} is a file, the directory does not exist or is not a bare repo
      */
     static GitDBLocal openLocal(final Path dbDir) throws IOException {
         try {
             final Git git = Git.open(dbDir.toFile());
+            verifyIsBareRepo(dbDir, git);
             return new GitDBLocal(git);
         } catch (RepositoryNotFoundException e) {
             throw new GitDBRepoNotFoundException(dbDir, e);
+        }
+    }
+
+    static void verifyIsBareRepo(final Path dbDir, final Git git) {
+        if (!git.getRepository().isBare()) {
+            throw new InvalidRepositoryException("Not a bare repo", dbDir);
         }
     }
 }
