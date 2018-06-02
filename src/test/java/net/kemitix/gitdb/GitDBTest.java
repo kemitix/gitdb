@@ -139,6 +139,15 @@ class GitDBTest implements WithAssertions {
     }
 
     // When opening a repo in a dir that doesn't exist then an exception is thrown
+    @Test
+    void openRepo_whenDirNotExist_thenThrowException() throws IOException {
+        //given
+        final Path dir = dirDoesNotExist();
+        //then
+        assertThatExceptionOfType(GitDBRepoNotFoundException.class)
+                .isThrownBy(() -> GitDB.openLocal(dir))
+                .withMessageContaining(dir.toString());
+    }
 
     // When opening a repo in a dir that is a bare repo then GitDb is returned
 
