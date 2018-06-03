@@ -5,13 +5,13 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.BDDMockito.given;
@@ -39,27 +39,16 @@ class GitDBTest implements WithAssertions {
 
     private void assertThatIsBareRepo(final Path dbDir) throws IOException {
         final Git git = Git.open(dbDir.toFile());
-        assertThat(git.getRepository().findRef(Constants.HEAD)).isNotNull();
-        assertThat(git.getRepository().isBare()).isTrue();
+        final Repository repository = git.getRepository();
+        assertThat(repository.findRef(Constants.HEAD)).isNotNull();
+        assertThat(repository.isBare()).isTrue();
+        assertThat(repository.getDirectory()).isEqualTo(dbDir.toFile());
     }
 
     private Path dirDoesNotExist() throws IOException {
         final Path directory = Files.createTempDirectory("gitdb");
         Files.delete(directory);
         return directory;
-    }
-
-    // When initialising a repo and an unexpected error occurs then an exception is thrown
-    @Test
-    void initRepo_whenUnexpectedError_thenThrowException() throws IOException, GitAPIException {
-        //given
-        final Path dbDir = dirDoesNotExist();
-        final InitCommand initCommand = spy(InitCommand.class);
-        given(initCommand.call()).willThrow(mock(GitAPIException.class));
-        //then
-        assertThatExceptionOfType(UnexpectedGitDbException.class)
-                .isThrownBy(() -> new GitDBLocal(initCommand, dbDir.toFile()))
-                .withMessageContaining("Unhandled Git API Exception");
     }
 
     // When initialising a repo in a dir that is a file then an exception is thrown
@@ -115,7 +104,7 @@ class GitDBTest implements WithAssertions {
         //given
         final Path dir = dirExists();
         //then
-        assertThatExceptionOfType(GitDBRepoNotFoundException.class)
+        assertThatExceptionOfType(InvalidRepositoryException.class)
                 .isThrownBy(() -> GitDB.openLocal(dir))
                 .withMessageContaining(dir.toString());
     }

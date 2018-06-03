@@ -21,8 +21,6 @@
 
 package net.kemitix.gitdb;
 
-import org.eclipse.jgit.errors.RepositoryNotFoundException;
-
 import java.nio.file.Path;
 
 /**
@@ -35,10 +33,10 @@ public class GitDBRepoNotFoundException extends RuntimeException {
     /**
      * Constructor.
      *
-     * @param path  the location where a GitDB repo was not found
-     * @param cause the original exception
+     * @param message why the GitDB wasn't found
+     * @param path    the location where a GitDB repo was not found
      */
-    GitDBRepoNotFoundException(final Path path, final RepositoryNotFoundException cause) {
-        super(String.format("GitDB repo not found: %s", path.toString()), cause);
+    GitDBRepoNotFoundException(final String message, final Path path) {
+        super(String.format("GitDB repo not found: %s: %s", message, path));
     }
 }

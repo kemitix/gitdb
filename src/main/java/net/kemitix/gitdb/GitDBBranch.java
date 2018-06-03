@@ -21,10 +21,15 @@
 
 package net.kemitix.gitdb;
 
+import org.eclipse.jgit.lib.Ref;
+
 /**
  * API for interacting with a branch in a GirDB.
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
 public interface GitDBBranch {
+    static GitDBBranch withRef(final Ref ref) {
+        return null;
+    }
 }

@@ -22,15 +22,16 @@
 package net.kemitix.gitdb;
 
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.util.FS;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
 import java.util.Optional;
 
 /**
@@ -41,38 +42,31 @@ import java.util.Optional;
 
 class GitDBLocal implements GitDB {
 
-    private final Git git;
+    private final Repository repository;
 
     /**
      * Create a new GitDB instance, while initialising a new git repo.
      *
-     * @param initCommand a JGit InitCommand
      * @param dbDir       the path to instantiate the git repo in
      * @throws IOException if there {@code dbDir} is a file or a non-empty directory
      */
-    @SuppressWarnings("avoidhidingcauseexception")
-    GitDBLocal(final InitCommand initCommand, final File dbDir) throws IOException {
+    GitDBLocal(final File dbDir) throws IOException {
         validateDbDir(dbDir);
-        try {
-            this.git = initRepo(initCommand, dbDir);
-        } catch (GitAPIException e) {
-            throw new UnexpectedGitDbException("Unhandled Git API Exception", e);
-        }
+        this.repository = initRepo(dbDir);
     }
 
     /**
      * Create a new GitDB instance using the Git repo.
      *
-     * @param git the Git handle for the repo
+     * @param repository the Git repository
      */
-    GitDBLocal(final Git git) {
-        this.git = verifyIsBareRepo(git);
+    GitDBLocal(final Repository repository) {
+        this.repository = verifyIsBareRepo(repository);
     }
 
-    private static Git verifyIsBareRepo(final Git git) {
-        final Repository repository = git.getRepository();
+    private static Repository verifyIsBareRepo(final Repository repository) {
         if (repository.isBare()) {
-            return git;
+            return repository;
         }
         throw new InvalidRepositoryException("Not a bare repo", repository.getDirectory().toPath());
     }
@@ -96,13 +90,22 @@ class GitDBLocal implements GitDB {
         }
     }
 
-    private static Git initRepo(final InitCommand initCommand, final File dbDir) throws GitAPIException {
-        return initCommand.setGitDir(dbDir).setBare(true).call();
+    private static Repository initRepo(final File dbDir) throws IOException {
+        dbDir.mkdirs();
+        final RepositoryCache.FileKey fileKey = RepositoryCache.FileKey.exact(dbDir, FS.DETECTED);
+        final Repository repository = fileKey.open(false);
+        repository.create(true);
+        return repository;
     }
 
     @Override
     public Optional<GitDBBranch> branch(final String name) {
-        return Optional.empty();
+        try {
+            return Optional.ofNullable(repository.findRef(name))
+                    .map(GitDBBranch::withRef);
+        } catch (IOException e) {
+            return Optional.empty();
+        }
     }
 
     //    @Override

@@ -23,6 +23,8 @@ package net.kemitix.gitdb;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.RepositoryBuilder;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -44,7 +46,6 @@ public interface GitDB {
      */
     static GitDB initLocal(final Path dbDir) throws IOException {
         return new GitDBLocal(
-                Git.init(),
                 dbDir.toFile()
         );
     }
@@ -54,15 +55,24 @@ public interface GitDB {
      *
      * @param dbDir the path to open as a local repo
      * @return a GitDB instance for the local gitdb
-     * @throws IOException if there {@code dbDir} is a file, the directory does not exist or is not a bare repo
      */
-    static GitDBLocal openLocal(final Path dbDir) throws IOException {
-        try {
-            final Git git = Git.open(dbDir.toFile());
-            return new GitDBLocal(git);
-        } catch (RepositoryNotFoundException e) {
-            throw new GitDBRepoNotFoundException(dbDir, e);
+    static GitDBLocal openLocal(final Path dbDir) {
+        if (dbDir.toFile().isFile()) {
+            throw new GitDBRepoNotFoundException("Not a directory", dbDir);
         }
+        if (!dbDir.toFile().exists()) {
+            throw new GitDBRepoNotFoundException("Directory not found", dbDir);
+        }
+        Repository repository = null;
+        try {
+            repository = Git.open(dbDir.toFile()).getRepository();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (repository != null && repository.isBare()) {
+            return new GitDBLocal(repository);
+        }
+        throw new InvalidRepositoryException("Not a bare repo", dbDir);
     }
 
     /**
