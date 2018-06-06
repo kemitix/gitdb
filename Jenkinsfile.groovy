@@ -42,8 +42,8 @@ pipeline {
                 }
             }
         }
-        stage('SonarQube (github only)') {
-            when { expression { env.GIT_URL.startsWith('https://github.com') } }
+        stage('SonarQube (gitlab only)') {
+            when { expression { env.GIT_URL.startsWith('https://gitlab.com') } }
             steps {
                 withSonarQubeEnv('sonarqube') {
                     withMaven(maven: 'maven', jdk: 'JDK LTS') {
@@ -58,8 +58,8 @@ pipeline {
                 archiveArtifacts '**/target/*.jar'
             }
         }
-        stage('Deploy (master on github)') {
-            when { expression { (env.GIT_BRANCH == 'master' && env.GIT_URL.startsWith('https://github.com')) } }
+        stage('Deploy (master on gitlab)') {
+            when { expression { (env.GIT_BRANCH == 'master' && env.GIT_URL.startsWith('https://gitlab.com')) } }
             steps {
                 withMaven(maven: 'maven', jdk: 'JDK LTS') {
                     sh "${mvn} deploy --activate-profiles release -DskipTests=true"
