@@ -25,6 +25,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.jgit.lib.Ref;
 
+import java.util.Optional;
+
 /**
  * API for interacting with a branch in a GirDB.
  *
@@ -43,5 +45,17 @@ public class GitDBBranch {
      */
     public static GitDBBranch withRef(final Ref ref) {
         return new GitDBBranch(ref);
+    }
+
+    /**
+     * Lookup a value for the key.
+     *
+     * @param key        the key to lookup
+     * @param valueClass the expected class of the value
+     * @param <T>        the Class of the value
+     * @return an Optional containing the value, if it exists, or empty if not
+     */
+    public <T> Optional<T> get(final String key, final Class<T> valueClass) {
+        return Optional.empty();
     }
 }

@@ -1,5 +1,6 @@
 package net.kemitix.gitdb;
 
+import org.assertj.core.api.Assumptions;
 import org.assertj.core.api.WithAssertions;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -12,6 +13,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.*;
 import java.nio.file.*;
 import java.util.Optional;
+
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 @ExtendWith(MockitoExtension.class)
 class GitDBTest implements WithAssertions {
@@ -193,6 +196,19 @@ class GitDBTest implements WithAssertions {
 
     // Given a valid GitDbBranch handle
     // When getting a key that does not exist then return an empty Optional
+    @Test
+    void getKey_whenKeyNotExist_thenReturnEmptyOptional() throws IOException {
+        //given
+        final GitDB gitDB = newGitDBRepo(dirDoesNotExist());
+        final Optional<GitDBBranch> branchOptional = gitDB.branch("master");
+        assumeThat(branchOptional).isNotEmpty();
+        final GitDBBranch master = branchOptional.get();
+        //when
+        final Optional<String> value = master.get("unknown", String.class);
+        //then
+        assertThat(value).isEmpty();
+    }
+
     // When putting a key/value pair then a GitDbBranch is returned
     // When getting a key that does exist then the value is returned inside an Optional
     // When removing a key that does not exist then the GitDbBranch is returned
