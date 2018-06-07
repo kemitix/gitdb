@@ -21,6 +21,7 @@
 
 package net.kemitix.gitdb;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 /**
@@ -34,9 +35,34 @@ public class InvalidRepositoryException extends RuntimeException {
      * Constructor.
      *
      * @param message the reason the repo is invalid
-     * @param path the location of the repo
+     * @param path    the location of the repo
      */
-    public InvalidRepositoryException(final String message, final Path path) {
-        super(String.format("Invalid GitDB repo: %s [%s]", message, path));
+    public InvalidRepositoryException(
+            final String message,
+            final Path path
+    ) {
+        super(message(message, path));
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param message the reason the repo is invalid
+     * @param path    the location of the repo
+     * @param cause   the cause
+     */
+    public InvalidRepositoryException(
+            final String message,
+            final Path path,
+            final IOException cause
+    ) {
+        super(message(message, path), cause);
+    }
+
+    private static String message(
+            final String message,
+            final Path path
+    ) {
+        return String.format("Invalid GitDB repo: %s [%s]", message, path);
     }
 }

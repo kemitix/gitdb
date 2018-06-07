@@ -21,6 +21,8 @@
 
 package net.kemitix.gitdb;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import org.eclipse.jgit.lib.Ref;
 
 /**
@@ -28,8 +30,18 @@ import org.eclipse.jgit.lib.Ref;
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
-public interface GitDBBranch {
-    static GitDBBranch withRef(final Ref ref) {
-        return null;
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+public class GitDBBranch {
+
+    private final Ref ref;
+
+    /**
+     * Create a new instance of GitDBBranch for the Ref.
+     *
+     * @param ref the Ref
+     * @return a GitDBBranch
+     */
+    public static GitDBBranch withRef(final Ref ref) {
+        return new GitDBBranch(ref);
     }
 }

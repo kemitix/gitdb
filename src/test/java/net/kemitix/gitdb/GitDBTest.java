@@ -2,7 +2,6 @@ package net.kemitix.gitdb;
 
 import org.assertj.core.api.WithAssertions;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
@@ -10,12 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.*;
 import java.util.Optional;
-
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class GitDBTest implements WithAssertions {
@@ -115,7 +111,7 @@ class GitDBTest implements WithAssertions {
         //given
         final Path dir = fileExists();
         //then
-        assertThatExceptionOfType(GitDBRepoNotFoundException.class)
+        assertThatExceptionOfType(InvalidRepositoryException.class)
                 .isThrownBy(() -> GitDB.openLocal(dir))
                 .withMessageContaining(dir.toString());
     }
@@ -126,7 +122,7 @@ class GitDBTest implements WithAssertions {
         //given
         final Path dir = dirDoesNotExist();
         //then
-        assertThatExceptionOfType(GitDBRepoNotFoundException.class)
+        assertThatExceptionOfType(InvalidRepositoryException.class)
                 .isThrownBy(() -> GitDB.openLocal(dir))
                 .withMessageContaining(dir.toString());
     }
@@ -170,20 +166,30 @@ class GitDBTest implements WithAssertions {
     // Given a valid GitDb handle
     // When select a branch that doesn't exist then an empty Optional is returned
     @Test
-    void selectBranch_branchNotExist_thenEmptyOptional() throws IOException {
+    void selectBranch_whenBranchNotExist_thenEmptyOptional() throws IOException {
         //given
-        final GitDB gitDb = newGitDBRepo();
+        final GitDB gitDb = newGitDBRepo(dirDoesNotExist());
         //when
         final Optional<GitDBBranch> branch = gitDb.branch("unknown");
         //then
         assertThat(branch).isEmpty();
     }
 
-    private GitDB newGitDBRepo() throws IOException {
-        return GitDB.initLocal(dirDoesNotExist());
+    private GitDB newGitDBRepo(final Path dbDir) throws IOException {
+        return GitDB.initLocal(dbDir);
     }
 
     // When select a valid branch then a GitDbBranch is returned
+    @Test
+    void selectBranch_branchExists_thenReturnBranch() throws IOException {
+        //given
+        final Path dbDir = dirDoesNotExist();
+        final GitDB gitDb = newGitDBRepo(dbDir);
+        //when
+        final Optional<GitDBBranch> branch = gitDb.branch("master");
+        //then
+        assertThat(branch).as("Branch master exists").isNotEmpty();
+    }
 
     // Given a valid GitDbBranch handle
     // When getting a key that does not exist then return an empty Optional
@@ -242,4 +248,15 @@ class GitDBTest implements WithAssertions {
 //        //        .map(Path::toFile)
 //        //        .forEach(File::delete);
 //    }
+
+    private static void tree(final Path dbDir, final PrintStream out) throws IOException {
+        final Process treeProcess = new ProcessBuilder("tree", dbDir.toString()).start();
+        try (final BufferedReader reader = new BufferedReader(new InputStreamReader(treeProcess.getInputStream()))) {
+            String line;
+            while (null != (line = reader.readLine())) {
+                out.println("line = " + line);
+            }
+        }
+    }
+
 }

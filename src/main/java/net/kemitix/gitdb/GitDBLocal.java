@@ -21,13 +21,12 @@
 
 package net.kemitix.gitdb;
 
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.util.FS;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
@@ -47,7 +46,7 @@ class GitDBLocal implements GitDB {
     /**
      * Create a new GitDB instance, while initialising a new git repo.
      *
-     * @param dbDir       the path to instantiate the git repo in
+     * @param dbDir the path to instantiate the git repo in
      * @throws IOException if there {@code dbDir} is a file or a non-empty directory
      */
     GitDBLocal(final File dbDir) throws IOException {
@@ -61,14 +60,7 @@ class GitDBLocal implements GitDB {
      * @param repository the Git repository
      */
     GitDBLocal(final Repository repository) {
-        this.repository = verifyIsBareRepo(repository);
-    }
-
-    private static Repository verifyIsBareRepo(final Repository repository) {
-        if (repository.isBare()) {
-            return repository;
-        }
-        throw new InvalidRepositoryException("Not a bare repo", repository.getDirectory().toPath());
+        this.repository = repository;
     }
 
     private void validateDbDir(final File dbDir) throws IOException {
@@ -92,129 +84,65 @@ class GitDBLocal implements GitDB {
 
     private static Repository initRepo(final File dbDir) throws IOException {
         dbDir.mkdirs();
-        final RepositoryCache.FileKey fileKey = RepositoryCache.FileKey.exact(dbDir, FS.DETECTED);
-        final Repository repository = fileKey.open(false);
+        final Repository repository = RepositoryCache.FileKey.exact(dbDir, FS.DETECTED).open(false);
         repository.create(true);
+        createInitialBranchOnMaster(repository);
         return repository;
     }
 
-    @Override
-    public Optional<GitDBBranch> branch(final String name) {
-        try {
-            return Optional.ofNullable(repository.findRef(name))
-                    .map(GitDBBranch::withRef);
-        } catch (IOException e) {
-            return Optional.empty();
-        }
+    private static void createInitialBranchOnMaster(final Repository repository) throws IOException {
+        // create empty file
+        final ObjectId objectId = insertAnEmptyBlob(repository);
+        // create tree
+        final ObjectId treeId = insertTree(repository, objectId);
+        // create commit
+        final ObjectId commitId = insertCommit(repository, treeId);
+        // create branch
+        writeBranch(repository, commitId, "master");
     }
 
-    //    @Override
-    //    @SneakyThrows
-    //    public <T> T get(Branch branch, Key key, Class<T> type) {
-    //        //branch
-    //        final RefDatabase refDatabase = repository.getRefDatabase();
-    //        final String branchValue = branch.getValue();
-    //        final Ref refDatabaseRef = refDatabase.getRef(branchValue);
-    //        final ObjectId commitId = refDatabaseRef.getObjectId();
-    //
-    //        final RevCommit revCommit = repository.parseCommit(commitId);
-    //        final RevTree tree = revCommit.getTree();
-    //        tree.copyTo(System.out);
-    //
-    //        final ObjectLoader open = repository.getObjectDatabase().open(objectId, Constants.OBJ_TREE);
-    //        final byte[] bytes = open.getBytes();
-    //        final String s = new String(bytes);
-    //        System.out.println("s = " + s);
-    //        //key
-    //        return null;
-    //    }
+    private static void writeBranch(
+            final Repository repository,
+            final ObjectId commitId,
+            final String branchName
+    ) throws IOException {
+        final Path branchRefPath =
+                repository.getDirectory().toPath().resolve("refs/heads/" + branchName).toAbsolutePath();
+        final byte[] commitIdBytes = commitId.name().getBytes(StandardCharsets.UTF_8);
+        Files.write(branchRefPath, commitIdBytes);
+    }
 
-    //    @Override
-    //    @SneakyThrows
-    //    public String put(Branch branch, Message message, Document<String> document, Author author) {
-    ////        return document.getValue();
-    //
-    //        final ObjectInserter objectInserter = repository.newObjectInserter();
-    //        final ObjectReader objectReader = repository.newObjectReader();
-    //        final RevWalk revWalk = new RevWalk(repository);
-    //
-    //        //blob
-    //        System.out.println("document = " + document.getKey());
-    //        final ObjectId blobId = objectInserter.insert(Constants.OBJ_BLOB, document.getValue().getBytes(UTF_8));
-    //        //tree
-    //        final TreeFormatter treeFormatter = new TreeFormatter();
-    //        treeFormatter.append(document.getKey().getValue(), FileMode.REGULAR_FILE, blobId);
-    //        final ObjectId treeId = objectInserter.insert(treeFormatter);
-    //        //commit
-    //        final CommitBuilder commitBuilder = new CommitBuilder();
-    //        final PersonIdent ident = new PersonIdent(author.getName(), author.getEmail());
-    //        commitBuilder.setCommitter(ident);
-    //        commitBuilder.setAuthor(ident);
-    //        commitBuilder.setTreeId(treeId);
-    //        commitBuilder.setMessage(message.getValue());
-    //        //TODO: setParentId()
-    //        final ObjectId commitId = objectInserter.insert(commitBuilder);
-    //        //branch
-    //        final RevCommit revCommit = revWalk.parseCommit(commitId);
-    //        revCommit.getShortMessage();
-    //        git.branchCreate()
-    //                .setStartPoint(revCommit)
-    //                .setName(branch.getValue())
-    //                .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.NOTRACK)
-    //                .call();
-    //
-    //        //READ
-    //
-    //        //block
-    //        final String readBlob = new String(objectReader.open(blobId).getBytes());
-    //        System.out.println("readBlob = " + readBlob);
-    //        final RevBlob revBlob = revWalk.lookupBlob(blobId);
-    //        System.out.println("revBlob  = " + revBlob);
-    //        final String blobName = revBlob.name();
-    //        System.out.println("blobName = " + blobName);
-    //        //tree
-    //        final RevTree revTree = revWalk.lookupTree(treeId);
-    //        System.out.println("revTree  = " + revTree);
-    //        final String treeName = revTree.name();
-    //        System.out.println("treeName = " + treeName);
-    //        //commit
-    //        System.out.println("revCommit= " + revCommit);
-    //        final String commitName = revCommit.getName();
-    //        System.out.println("commitName= " + commitName);
-    //        //branch
-    //        final Ref branchRef = repository.getRefDatabase().getRef(branch.getValue());
-    //        System.out.println("branchRef = " + branchRef.getName());
-    //
-    ////        final TreeWalk treeWalk = new TreeWalk(repository);
-    ////        treeWalk.addTree(treeId);
-    ////        treeWalk.next();
-    ////        final String nameString = treeWalk.getNameString();
-    ////        System.out.println("name     = " + nameString);
-    ////        final ObjectId objectId = treeWalk.getObjectId(0);
-    ////        System.out.println("objectId = " + objectId);
-    //
-    ////        final ObjectLoader openTree = repository.newObjectReader().open(treeId);
-    ////        final int type = openTree.openStream().getType();
-    ////        final long size = openTree.openStream().getSize();
-    ////        final String readTree = new String(openTree.getBytes());
-    //
-    ////
-    ////        //commit
-    ////        final CommitBuilder commitBuilder = new CommitBuilder();
-    ////        commitBuilder.setAuthor(new PersonIdent(author.getName(), author.getEmail()));
-    ////        commitBuilder.setCommitter(new PersonIdent(author.getName(), author.getEmail()));
-    ////        commitBuilder.setMessage(message.getValue());
-    ////        findParentCommit(branch)
-    ////                .ifPresent(commitBuilder::setParentId);
-    ////        commitBuilder.setTreeId(treeId);
-    ////        final ObjectId commitId = repository.newObjectInserter().insert(commitBuilder);
-    ////
-    ////        //branch
-    ////        repository.updateRef(branch.getValue()).setNewObjectId(commitId);
-    ////
-    ////        //get
-    ////        return get(branch, document.getKey());
-    //        return document.getValue();
-    //    }
+    private static ObjectId insertCommit(
+            final Repository repository,
+            final ObjectId treeId
+    ) throws IOException {
+        final CommitBuilder commitBuilder = new CommitBuilder();
+        commitBuilder.setTreeId(treeId);
+        commitBuilder.setMessage("Initialise GitDB v1");
+        final PersonIdent ident = new PersonIdent("GitDB", "pcampbell@kemitix.net");
+        commitBuilder.setAuthor(ident);
+        commitBuilder.setCommitter(ident);
+        commitBuilder.setParentId(ObjectId.zeroId());
+        return repository.getObjectDatabase().newInserter().insert(commitBuilder);
+    }
+
+    private static ObjectId insertTree(
+            final Repository repository,
+            final ObjectId objectId
+    ) throws IOException {
+        final TreeFormatter treeFormatter = new TreeFormatter();
+        treeFormatter.append("isGitDB", FileMode.REGULAR_FILE, objectId);
+        return repository.getObjectDatabase().newInserter().insert(treeFormatter);
+    }
+
+    private static ObjectId insertAnEmptyBlob(final Repository repository) throws IOException {
+        return repository.getObjectDatabase().newInserter().insert(Constants.OBJ_BLOB, new byte[0]);
+    }
+
+    @Override
+    public Optional<GitDBBranch> branch(final String name) throws IOException {
+        return Optional.ofNullable(repository.findRef(name))
+                .map(GitDBBranch::withRef);
+    }
 
 }

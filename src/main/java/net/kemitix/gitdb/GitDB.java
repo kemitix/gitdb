@@ -22,9 +22,7 @@
 package net.kemitix.gitdb;
 
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.lib.RepositoryBuilder;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -57,22 +55,15 @@ public interface GitDB {
      * @return a GitDB instance for the local gitdb
      */
     static GitDBLocal openLocal(final Path dbDir) {
-        if (dbDir.toFile().isFile()) {
-            throw new GitDBRepoNotFoundException("Not a directory", dbDir);
-        }
-        if (!dbDir.toFile().exists()) {
-            throw new GitDBRepoNotFoundException("Directory not found", dbDir);
-        }
-        Repository repository = null;
         try {
-            repository = Git.open(dbDir.toFile()).getRepository();
-        } catch (Exception e) {
-            e.printStackTrace();
+            return Optional.of(Git.open(dbDir.toFile()))
+                    .map(Git::getRepository)
+                    .filter(Repository::isBare)
+                    .map(GitDBLocal::new)
+                    .orElseThrow(() -> new InvalidRepositoryException("Not a bare repo", dbDir));
+        } catch (IOException e) {
+            throw new InvalidRepositoryException("Error opening repository", dbDir, e);
         }
-        if (repository != null && repository.isBare()) {
-            return new GitDBLocal(repository);
-        }
-        throw new InvalidRepositoryException("Not a bare repo", dbDir);
     }
 
     /**
@@ -80,6 +71,7 @@ public interface GitDB {
      *
      * @param name the branch to select
      * @return an Optional containing the branch if it exists
+     * @throws IOException if there is an error accessing the branch name
      */
-    Optional<GitDBBranch> branch(String name);
+    Optional<GitDBBranch> branch(String name) throws IOException;
 }
