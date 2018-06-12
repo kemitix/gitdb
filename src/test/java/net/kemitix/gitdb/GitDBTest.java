@@ -1,11 +1,11 @@
 package net.kemitix.gitdb;
 
-import org.assertj.core.api.Assumptions;
 import org.assertj.core.api.WithAssertions;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,10 +19,8 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 @ExtendWith(MockitoExtension.class)
 class GitDBTest implements WithAssertions {
 
-//    private final Branch master = Branch.name("master");
-//    private final Message message = Message.message(UUID.randomUUID().toString());
-//    private final Key key = Key.name(UUID.randomUUID().toString());
-//    private final Author author = Author.name("junit", "gitdb@kemitix.net");
+    private String userName = "user name";
+    private String userEmailAddress = "user@email.com";
 
     // When initialising a repo in a dir that doesn't exist then a bare repo is created
     @Test
@@ -30,7 +28,7 @@ class GitDBTest implements WithAssertions {
         //given
         final Path dir = dirDoesNotExist();
         //when
-        final GitDB gitDB = GitDB.initLocal(dir);
+        final GitDB gitDB = GitDB.initLocal(dir, userName, userEmailAddress);
         //then
         assertThat(gitDB).isNotNull();
         assertThatIsBareRepo(dir);
@@ -57,7 +55,7 @@ class GitDBTest implements WithAssertions {
         final Path dir = fileExists();
         //then
         assertThatExceptionOfType(NotDirectoryException.class)
-                .isThrownBy(() -> GitDB.initLocal(dir))
+                .isThrownBy(() -> GitDB.initLocal(dir, userName, userEmailAddress))
                 .withMessageContaining(dir.toString());
     }
 
@@ -73,7 +71,7 @@ class GitDBTest implements WithAssertions {
         filesExistIn(dir);
         //then
         assertThatExceptionOfType(DirectoryNotEmptyException.class)
-                .isThrownBy(() -> GitDB.initLocal(dir))
+                .isThrownBy(() -> GitDB.initLocal(dir, userName, userEmailAddress))
                 .withMessageContaining(dir.toString());
     }
 
@@ -91,7 +89,7 @@ class GitDBTest implements WithAssertions {
         //given
         final Path dir = dirExists();
         //when
-        final GitDB gitDB = GitDB.initLocal(dir);
+        final GitDB gitDB = GitDB.initLocal(dir, userName, userEmailAddress);
         //then
         assertThat(gitDB).isNotNull();
         assertThatIsBareRepo(dir);
@@ -104,7 +102,7 @@ class GitDBTest implements WithAssertions {
         final Path dir = dirExists();
         //then
         assertThatExceptionOfType(InvalidRepositoryException.class)
-                .isThrownBy(() -> GitDB.openLocal(dir))
+                .isThrownBy(() -> GitDB.openLocal(dir, userName, userEmailAddress))
                 .withMessageContaining(dir.toString());
     }
 
@@ -115,7 +113,7 @@ class GitDBTest implements WithAssertions {
         final Path dir = fileExists();
         //then
         assertThatExceptionOfType(InvalidRepositoryException.class)
-                .isThrownBy(() -> GitDB.openLocal(dir))
+                .isThrownBy(() -> GitDB.openLocal(dir, userName, userEmailAddress))
                 .withMessageContaining(dir.toString());
     }
 
@@ -126,7 +124,7 @@ class GitDBTest implements WithAssertions {
         final Path dir = dirDoesNotExist();
         //then
         assertThatExceptionOfType(InvalidRepositoryException.class)
-                .isThrownBy(() -> GitDB.openLocal(dir))
+                .isThrownBy(() -> GitDB.openLocal(dir, userName, userEmailAddress))
                 .withMessageContaining(dir.toString());
     }
 
@@ -137,7 +135,7 @@ class GitDBTest implements WithAssertions {
         final Path dir = nonBareRepo();
         //then
         assertThatExceptionOfType(InvalidRepositoryException.class)
-                .isThrownBy(() -> GitDB.openLocal(dir))
+                .isThrownBy(() -> GitDB.openLocal(dir, userName, userEmailAddress))
                 .withMessageContaining("Invalid GitDB repo")
                 .withMessageContaining("Not a bare repo")
                 .withMessageContaining(dir.toString());
@@ -155,14 +153,14 @@ class GitDBTest implements WithAssertions {
         //given
         final Path dir = gitDBRepoPath();
         //when
-        final GitDBLocal gitDB = GitDB.openLocal(dir);
+        final GitDBLocal gitDB = GitDB.openLocal(dir, userName, userEmailAddress);
         //then
         assertThat(gitDB).isNotNull();
     }
 
     private Path gitDBRepoPath() throws IOException {
         final Path dbDir = dirDoesNotExist();
-        GitDB.initLocal(dbDir);
+        GitDB.initLocal(dbDir, userName, userEmailAddress);
         return dbDir;
     }
 
@@ -171,15 +169,15 @@ class GitDBTest implements WithAssertions {
     @Test
     void selectBranch_whenBranchNotExist_thenEmptyOptional() throws IOException {
         //given
-        final GitDB gitDb = newGitDBRepo(dirDoesNotExist());
+        final GitDB gitDb = gitDB(dirDoesNotExist());
         //when
         final Optional<GitDBBranch> branch = gitDb.branch("unknown");
         //then
         assertThat(branch).isEmpty();
     }
 
-    private GitDB newGitDBRepo(final Path dbDir) throws IOException {
-        return GitDB.initLocal(dbDir);
+    private GitDB gitDB(final Path dbDir) throws IOException {
+        return GitDB.initLocal(dbDir, userName, userEmailAddress);
     }
 
     // When select a valid branch then a GitDbBranch is returned
@@ -187,7 +185,7 @@ class GitDBTest implements WithAssertions {
     void selectBranch_branchExists_thenReturnBranch() throws IOException {
         //given
         final Path dbDir = dirDoesNotExist();
-        final GitDB gitDb = newGitDBRepo(dbDir);
+        final GitDB gitDb = gitDB(dbDir);
         //when
         final Optional<GitDBBranch> branch = gitDb.branch("master");
         //then
@@ -197,19 +195,37 @@ class GitDBTest implements WithAssertions {
     // Given a valid GitDbBranch handle
     // When getting a key that does not exist then return an empty Optional
     @Test
-    void getKey_whenKeyNotExist_thenReturnEmptyOptional() throws IOException {
+    void getKey_whenKeyNotExist_thenReturnEmptyOptional() throws IOException, ClassNotFoundException {
         //given
-        final GitDB gitDB = newGitDBRepo(dirDoesNotExist());
-        final Optional<GitDBBranch> branchOptional = gitDB.branch("master");
-        assumeThat(branchOptional).isNotEmpty();
-        final GitDBBranch master = branchOptional.get();
+        final GitDBBranch branch = gitDBBranch();
         //when
-        final Optional<String> value = master.get("unknown", String.class);
+        final Optional<String> value = branch.get("unknown");
         //then
         assertThat(value).isEmpty();
     }
 
+    private GitDBBranch gitDBBranch() throws IOException {
+        final GitDB gitDB = gitDB(dirDoesNotExist());
+        final Optional<GitDBBranch> branchOptional = gitDB.branch("master");
+        assumeThat(branchOptional).isNotEmpty();
+        return branchOptional.get();
+    }
+
     // When putting a key/value pair then a GitDbBranch is returned
+    @Test
+    void putValue_thenReturnUpdatedGitDBBranch() throws IOException, ClassNotFoundException {
+        //given
+        final GitDBBranch originalBranch = gitDBBranch();
+        //when
+        final GitDBBranch updatedBranch = originalBranch.put("key-name", "value");
+        //then
+        assertThat(updatedBranch).isNotNull();
+        assertThat(updatedBranch).isNotSameAs(originalBranch);
+        final Optional<String> optional = updatedBranch.get("key-name");
+        assertThat(optional).contains("value");
+        //assertThat(originalBranch.get("key", String.class)).isEmpty();
+    }
+
     // When getting a key that does exist then the value is returned inside an Optional
     // When removing a key that does not exist then the GitDbBranch is returned
     // When removing a key that does exist then a GitDbBranch is returned

@@ -38,28 +38,32 @@ public interface GitDB {
     /**
      * Initialise a new local gitdb.
      *
-     * @param dbDir the path to initialise the local repo in
+     * @param dbDir            the path to initialise the local repo in
+     * @param userName         the user name
+     * @param userEmailAddress the user email address
      * @return a GitDB instance for the created local gitdb
      * @throws IOException if there {@code dbDir} is a file or a non-empty directory
      */
-    static GitDB initLocal(final Path dbDir) throws IOException {
+    static GitDB initLocal(final Path dbDir, final String userName, final String userEmailAddress) throws IOException {
         return new GitDBLocal(
-                dbDir.toFile()
+                dbDir.toFile(), userName, userEmailAddress
         );
     }
 
     /**
      * Open an existing local gitdb.
      *
-     * @param dbDir the path to open as a local repo
+     * @param dbDir            the path to open as a local repo
+     * @param userName         the user name
+     * @param userEmailAddress the user email address
      * @return a GitDB instance for the local gitdb
      */
-    static GitDBLocal openLocal(final Path dbDir) {
+    static GitDBLocal openLocal(final Path dbDir, final String userName, final String userEmailAddress) {
         try {
             return Optional.of(Git.open(dbDir.toFile()))
                     .map(Git::getRepository)
                     .filter(Repository::isBare)
-                    .map(GitDBLocal::new)
+                    .map(repository -> new GitDBLocal(repository, userName, userEmailAddress))
                     .orElseThrow(() -> new InvalidRepositoryException("Not a bare repo", dbDir));
         } catch (IOException e) {
             throw new InvalidRepositoryException("Error opening repository", dbDir, e);

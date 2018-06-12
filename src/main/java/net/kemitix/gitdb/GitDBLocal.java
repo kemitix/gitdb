@@ -42,32 +42,44 @@ import java.util.Optional;
 class GitDBLocal implements GitDB {
 
     private final Repository repository;
+    private final String userName;
+    private final String userEmailAddress;
 
     /**
      * Create a new GitDB instance, while initialising a new git repo.
      *
-     * @param dbDir the path to instantiate the git repo in
+     * @param dbDir            the path to instantiate the git repo in
+     * @param userName         the user name
+     * @param userEmailAddress the user email address
      * @throws IOException if there {@code dbDir} is a file or a non-empty directory
      */
-    GitDBLocal(final File dbDir) throws IOException {
-        validateDbDir(dbDir);
-        this.repository = initRepo(dbDir);
+    GitDBLocal(
+            final File dbDir,
+            final String userName,
+            final String userEmailAddress
+    ) throws IOException {
+        this(GitDBLocal.initRepo(validDbDir(dbDir)), userName, userEmailAddress);
     }
 
     /**
      * Create a new GitDB instance using the Git repo.
      *
-     * @param repository the Git repository
+     * @param repository       the Git repository
+     * @param userName         the user name
+     * @param userEmailAddress the user email address
      */
-    GitDBLocal(final Repository repository) {
+    GitDBLocal(final Repository repository, final String userName, final String userEmailAddress) {
         this.repository = repository;
+        this.userName = userName;
+        this.userEmailAddress = userEmailAddress;
     }
 
-    private void validateDbDir(final File dbDir) throws IOException {
+    private static File validDbDir(final File dbDir) throws IOException {
         verifyIsNotAFile(dbDir);
         if (dbDir.exists()) {
             verifyIsEmpty(dbDir);
         }
+        return dbDir;
     }
 
     private static void verifyIsEmpty(final File dbDir) throws IOException {
@@ -82,6 +94,12 @@ class GitDBLocal implements GitDB {
         }
     }
 
+    @Override
+    public Optional<GitDBBranch> branch(final String name) throws IOException {
+        return Optional.ofNullable(repository.findRef(name))
+                .map(ref -> GitDBBranch.withRef(ref, GitDBRepo.in(repository), userName, userEmailAddress));
+    }
+
     private static Repository initRepo(final File dbDir) throws IOException {
         dbDir.mkdirs();
         final Repository repository = RepositoryCache.FileKey.exact(dbDir, FS.DETECTED).open(false);
@@ -91,58 +109,30 @@ class GitDBLocal implements GitDB {
     }
 
     private static void createInitialBranchOnMaster(final Repository repository) throws IOException {
-        // create empty file
-        final ObjectId objectId = insertAnEmptyBlob(repository);
-        // create tree
-        final ObjectId treeId = insertTree(repository, objectId);
-        // create commit
-        final ObjectId commitId = insertCommit(repository, treeId);
-        // create branch
-        writeBranch(repository, commitId, "master");
+        final GitDBRepo repo = GitDBRepo.in(repository);
+        final ObjectId objectId = repo.insertBlob(new byte[0]);
+        final ObjectId treeId = repo.insertNewTree("isGitDB", objectId);
+        final ObjectId commitId = repo.insertCommit(
+                treeId,
+                "Initialise GitDB v1",
+                "GitDB",
+                "pcampbell@kemitix.net",
+                ObjectId.zeroId());
+        createBranch(repository, commitId, "master");
     }
 
-    private static void writeBranch(
+    private static void createBranch(
             final Repository repository,
             final ObjectId commitId,
             final String branchName
     ) throws IOException {
-        final Path branchRefPath =
-                repository.getDirectory().toPath().resolve("refs/heads/" + branchName).toAbsolutePath();
+        final Path branchRefPath = repository
+                .getDirectory()
+                .toPath()
+                .resolve("refs/heads/" + branchName)
+                .toAbsolutePath();
         final byte[] commitIdBytes = commitId.name().getBytes(StandardCharsets.UTF_8);
         Files.write(branchRefPath, commitIdBytes);
-    }
-
-    private static ObjectId insertCommit(
-            final Repository repository,
-            final ObjectId treeId
-    ) throws IOException {
-        final CommitBuilder commitBuilder = new CommitBuilder();
-        commitBuilder.setTreeId(treeId);
-        commitBuilder.setMessage("Initialise GitDB v1");
-        final PersonIdent ident = new PersonIdent("GitDB", "pcampbell@kemitix.net");
-        commitBuilder.setAuthor(ident);
-        commitBuilder.setCommitter(ident);
-        commitBuilder.setParentId(ObjectId.zeroId());
-        return repository.getObjectDatabase().newInserter().insert(commitBuilder);
-    }
-
-    private static ObjectId insertTree(
-            final Repository repository,
-            final ObjectId objectId
-    ) throws IOException {
-        final TreeFormatter treeFormatter = new TreeFormatter();
-        treeFormatter.append("isGitDB", FileMode.REGULAR_FILE, objectId);
-        return repository.getObjectDatabase().newInserter().insert(treeFormatter);
-    }
-
-    private static ObjectId insertAnEmptyBlob(final Repository repository) throws IOException {
-        return repository.getObjectDatabase().newInserter().insert(Constants.OBJ_BLOB, new byte[0]);
-    }
-
-    @Override
-    public Optional<GitDBBranch> branch(final String name) throws IOException {
-        return Optional.ofNullable(repository.findRef(name))
-                .map(GitDBBranch::withRef);
     }
 
 }
