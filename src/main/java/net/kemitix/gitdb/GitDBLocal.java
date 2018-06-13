@@ -24,14 +24,8 @@ package net.kemitix.gitdb;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.*;
-import org.eclipse.jgit.util.FS;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryNotEmptyException;
-import java.nio.file.Files;
-import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -43,14 +37,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 class GitDBLocal implements GitDB {
 
-    private static final String INIT_MESSAGE = "Initialise GitDB v1";
-    private static final String INIT_USER = "GitDB";
-    private static final String INIT_EMAIL = "pcampbell@kemitix.net";
-    private static final String MASTER = "master";
-    private static final String IS_GIT_DB = "isGitDB";
     private static final String NOT_A_BARE_REPO = "Not a bare repo";
     private static final String ERROR_OPENING_REPOSITORY = "Error opening repository";
-    private static final String REFS_HEADS_FORMAT = "refs/heads/%s";
 
     private final Repository repository;
     private final String userName;
@@ -94,63 +82,8 @@ class GitDBLocal implements GitDB {
             final String userName,
             final String userEmailAddress
     ) throws IOException {
-        initRepo(validDbDir(dbDir.toFile()));
+        InitGitDBRepo.create(dbDir);
         return open(dbDir, userName, userEmailAddress);
-    }
-
-    private static File validDbDir(final File dbDir) throws IOException {
-        verifyIsNotAFile(dbDir);
-        if (dbDir.exists()) {
-            verifyIsEmpty(dbDir);
-        }
-        return dbDir;
-    }
-
-    private static void verifyIsEmpty(final File dbDir) throws IOException {
-        if (Files.newDirectoryStream(dbDir.toPath()).iterator().hasNext()) {
-            throw new DirectoryNotEmptyException(dbDir.toString());
-        }
-    }
-
-    private static void verifyIsNotAFile(final File dbDir) throws NotDirectoryException {
-        if (dbDir.isFile()) {
-            throw new NotDirectoryException(dbDir.toString());
-        }
-    }
-
-    private static void initRepo(final File dbDir) throws IOException {
-        dbDir.mkdirs();
-        final Repository repository = RepositoryCache.FileKey.exact(dbDir, FS.DETECTED).open(false);
-        repository.create(true);
-        createInitialBranchOnMaster(repository);
-    }
-
-    private static void createInitialBranchOnMaster(final Repository repository) throws IOException {
-        final GitDBRepo repo = GitDBRepo.in(repository);
-        final ObjectId objectId = repo.insertBlob(new byte[0]);
-        final ObjectId treeId = repo.insertNewTree(IS_GIT_DB, objectId);
-        final ObjectId commitId = repo.insertCommit(treeId, INIT_MESSAGE, INIT_USER, INIT_EMAIL, ObjectId.zeroId());
-        createBranch(repository, commitId, MASTER);
-    }
-
-    private static void createBranch(
-            final Repository repository,
-            final ObjectId commitId,
-            final String branchName
-    ) throws IOException {
-        final Path branchRefPath = branchRefPath(repository, branchName);
-        final byte[] commitIdBytes = commitId.name().getBytes(StandardCharsets.UTF_8);
-        Files.write(branchRefPath, commitIdBytes);
-    }
-
-    private static Path branchRefPath(
-            final Repository repository,
-            final String branchName
-    ) {
-        return repository.getDirectory()
-                .toPath()
-                .resolve(String.format(REFS_HEADS_FORMAT, branchName))
-                .toAbsolutePath();
     }
 
     @Override
