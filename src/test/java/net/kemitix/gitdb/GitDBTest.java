@@ -251,44 +251,6 @@ class GitDBTest implements WithAssertions {
     // When closing the transaction the updated value is found
     // When closing the transaction the removed key is not found
 
-
-//    @Test
-//    void saveFirstDocumentCreatesNewMasterBranch() {
-//        //given
-//        final String value = "{\"key\":\"value\"}";
-//        final Document<String> document = Document.create(key, value);
-//        final JsonObject expected = Json.createObjectBuilder()
-//                .add("key", "value")
-//                .build();
-//        //when
-//        final Key savedKey = gitDB.branch(master)
-//                .put(message, document, author);
-//        //then
-//        final String retrievedObject = gitDB.branch(master).get(savedKey);
-//
-//    }
-
-//    @Test
-//    void getGivesSavedValue() {
-//        //given
-//        final String value = UUID.randomUUID().toString();
-//        final Document<String> document = Document.create(key, value);
-//        gitDB.save(master, message, document, author);
-//        //when
-//        final String result = gitDB.get(master, key);
-//        //then
-//        assertThat(result).isEqualTo(value);
-//    }
-
-//    @AfterEach
-//    void tearDown() throws IOException {
-//        gitDB.close();
-//        //Files.walk(dbDir)
-//        //        .sorted(Comparator.reverseOrder())
-//        //        .map(Path::toFile)
-//        //        .forEach(File::delete);
-//    }
-
     private static void tree(final Path dbDir, final PrintStream out) throws IOException {
         final Process treeProcess = new ProcessBuilder("tree", dbDir.toString()).start();
         try (final BufferedReader reader = new BufferedReader(new InputStreamReader(treeProcess.getInputStream()))) {
