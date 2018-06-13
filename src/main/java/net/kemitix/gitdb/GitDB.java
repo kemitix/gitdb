@@ -21,9 +21,6 @@
 
 package net.kemitix.gitdb;
 
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.lib.Repository;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -44,10 +41,12 @@ public interface GitDB {
      * @return a GitDB instance for the created local gitdb
      * @throws IOException if there {@code dbDir} is a file or a non-empty directory
      */
-    static GitDB initLocal(final Path dbDir, final String userName, final String userEmailAddress) throws IOException {
-        return new GitDBLocal(
-                dbDir.toFile(), userName, userEmailAddress
-        );
+    static GitDB initLocal(
+            final Path dbDir,
+            final String userName,
+            final String userEmailAddress
+    ) throws IOException {
+        return GitDBLocal.init(dbDir, userName, userEmailAddress);
     }
 
     /**
@@ -58,16 +57,10 @@ public interface GitDB {
      * @param userEmailAddress the user email address
      * @return a GitDB instance for the local gitdb
      */
-    static GitDBLocal openLocal(final Path dbDir, final String userName, final String userEmailAddress) {
-        try {
-            return Optional.of(Git.open(dbDir.toFile()))
-                    .map(Git::getRepository)
-                    .filter(Repository::isBare)
-                    .map(repository -> new GitDBLocal(repository, userName, userEmailAddress))
-                    .orElseThrow(() -> new InvalidRepositoryException("Not a bare repo", dbDir));
-        } catch (IOException e) {
-            throw new InvalidRepositoryException("Error opening repository", dbDir, e);
-        }
+    static GitDB openLocal(final Path dbDir, final String userName, final String userEmailAddress) {
+        return GitDBLocal.open(dbDir, userName, userEmailAddress);
+
+
     }
 
     /**

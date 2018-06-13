@@ -153,7 +153,7 @@ class GitDBTest implements WithAssertions {
         //given
         final Path dir = gitDBRepoPath();
         //when
-        final GitDBLocal gitDB = GitDB.openLocal(dir, userName, userEmailAddress);
+        final GitDB gitDB = GitDB.openLocal(dir, userName, userEmailAddress);
         //then
         assertThat(gitDB).isNotNull();
     }
