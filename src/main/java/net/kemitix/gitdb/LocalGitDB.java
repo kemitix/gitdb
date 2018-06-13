@@ -35,7 +35,7 @@ import java.util.Optional;
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
 @RequiredArgsConstructor
-class GitDBLocal implements GitDB {
+class LocalGitDB implements GitDB {
 
     private static final String NOT_A_BARE_REPO = "Not a bare repo";
     private static final String ERROR_OPENING_REPOSITORY = "Error opening repository";
@@ -61,7 +61,7 @@ class GitDBLocal implements GitDB {
             return Optional.of(Git.open(dbDir.toFile()))
                     .map(Git::getRepository)
                     .filter(Repository::isBare)
-                    .map(repository -> new GitDBLocal(repository, userName, userEmailAddress))
+                    .map(repository -> new LocalGitDB(repository, userName, userEmailAddress))
                     .orElseThrow(() -> new InvalidRepositoryException(NOT_A_BARE_REPO, dbDir));
         } catch (IOException e) {
             throw new InvalidRepositoryException(ERROR_OPENING_REPOSITORY, dbDir, e);

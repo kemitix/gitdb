@@ -46,7 +46,7 @@ public interface GitDB {
             final String userName,
             final String userEmailAddress
     ) throws IOException {
-        return GitDBLocal.init(dbDir, userName, userEmailAddress);
+        return LocalGitDB.init(dbDir, userName, userEmailAddress);
     }
 
     /**
@@ -58,7 +58,7 @@ public interface GitDB {
      * @return a GitDB instance for the local gitdb
      */
     static GitDB openLocal(final Path dbDir, final String userName, final String userEmailAddress) {
-        return GitDBLocal.open(dbDir, userName, userEmailAddress);
+        return LocalGitDB.open(dbDir, userName, userEmailAddress);
 
 
     }
