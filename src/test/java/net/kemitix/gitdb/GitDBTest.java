@@ -237,13 +237,16 @@ class GitDBTest implements WithAssertions {
 
     // When removing a key that does not exist then the GitDbBranch is returned
     // When removing a key that does exist then a GitDbBranch is returned
+    // When removing a key that does exist then original GitDbBranch can still find it
+    // When removing a key that does exist then the updated GitDbBranch can't find it
+
     // When starting a named transaction then GitDbTransaction is returned
     // When starting an anonymous transaction then a GitDbTransaction is returned
 
-    // Given a GitDbTransaction handle
-    // When putting a new key/value pair then the GitDbBranch can't find it
-    // When putting an existing key/value pair then the GitDbBranch finds the original value
-    // When removing a key from then the GitDbBRanch still finds it
+    // Given a GitDbTransaction handle (i.e. a new branch)
+    // When putting a new key/value pair then the original GitDbBranch can't find it
+    // When putting an existing key/value pair then the original GitDbBranch finds the original value
+    // When removing a key then the original GitDbBRanch still finds it
 
     // Given a GitDbTransaction handle with a added, updated and removed keys
     // When closing the transaction an GitDbBranch is returned
