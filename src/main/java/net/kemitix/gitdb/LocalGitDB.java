@@ -21,21 +21,20 @@
 
 package net.kemitix.gitdb;
 
-import lombok.RequiredArgsConstructor;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.*;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Implementation of GitDB for working with a local Repo.
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
-@RequiredArgsConstructor
-class LocalGitDB implements GitDB {
+final class LocalGitDB implements GitDB {
 
     private static final String NOT_A_BARE_REPO = "Not a bare repo";
     private static final String ERROR_OPENING_REPOSITORY = "Error opening repository";
@@ -43,6 +42,19 @@ class LocalGitDB implements GitDB {
     private final Repository repository;
     private final String userName;
     private final String userEmailAddress;
+
+    private final Function<Ref, GitDBBranch> branchInit;
+
+    private LocalGitDB(
+            final Repository repository,
+            final String userName,
+            final String userEmailAddress
+    ) {
+        this.repository = repository;
+        this.userName = userName;
+        this.userEmailAddress = userEmailAddress;
+        branchInit = GitDBBranch.init(this.repository, this.userName, this.userEmailAddress);
+    }
 
     /**
      * Create a new GitDB instance using the Git repo.
@@ -88,8 +100,7 @@ class LocalGitDB implements GitDB {
 
     @Override
     public Optional<GitDBBranch> branch(final String name) throws IOException {
-        return Optional.ofNullable(repository.findRef(name))
-                .map(ref -> GitDBBranch.withRef(ref, GitDBRepo.in(repository), userName, userEmailAddress));
+        return Optional.ofNullable(repository.findRef(name)).map(branchInit);
     }
 
 }

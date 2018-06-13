@@ -23,13 +23,14 @@ package net.kemitix.gitdb;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import org.eclipse.jgit.lib.AnyObjectId;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * API for interacting with a branch in a GirDB.
@@ -45,22 +46,29 @@ public class GitDBBranch {
     private final String userName;
     private final String userEmailAddress;
 
-    /**
-     * Create a new instance of GitDBBranch for the Ref.
-     *
-     * @param ref              the Ref
-     * @param gitDBRepo        the GitDBRepo
-     * @param userName         the user name
-     * @param userEmailAddress the user email address
-     * @return a GitDBBranch
-     */
-    public static GitDBBranch withRef(
-            final Ref ref,
+    private static GitDBBranch select(
+            final Ref branchRef,
             final GitDBRepo gitDBRepo,
             final String userName,
             final String userEmailAddress
     ) {
-        return new GitDBBranch(ref, gitDBRepo, userName, userEmailAddress);
+        return new GitDBBranch(branchRef, gitDBRepo, userName, userEmailAddress);
+    }
+
+    /**
+     * Initialise the creation of new GitDBBranch instances.
+     *
+     * @param repository the Git Repository
+     * @param userName the user name to record against changes
+     * @param userEmailAddress the user's email address to record against changes
+     * @return a Function for creating a GitDBBranch when supplied with a Ref for a branch
+     */
+    static Function<Ref, GitDBBranch> init(
+            final Repository repository,
+            final String userName,
+            final String userEmailAddress
+    ) {
+        return ref -> select(ref, GitDBRepo.in(repository), userName, userEmailAddress);
     }
 
     /**
@@ -109,19 +117,13 @@ public class GitDBBranch {
         return gitDBRepo.insertTree(branchRef, key, valueId);
     }
 
-    private ObjectId insertCommit(
-            final ObjectId treeId,
-            final String message
-    ) throws IOException {
-        return gitDBRepo.insertCommit(treeId, message, userName, userEmailAddress, head());
-    }
-
-    private AnyObjectId head() {
-        return branchRef.getObjectId();
+    private ObjectId insertCommit(final ObjectId treeId, final String message) throws IOException {
+        final ObjectId headCommitId = branchRef.getObjectId();
+        return gitDBRepo.insertCommit(treeId, message, userName, userEmailAddress, headCommitId);
     }
 
     private GitDBBranch updateBranch(final ObjectId commitId) throws IOException {
         final Ref updatedRef = gitDBRepo.writeHead(branchRef.getName(), commitId);
-        return GitDBBranch.withRef(updatedRef, gitDBRepo, userName, userEmailAddress);
+        return select(updatedRef, gitDBRepo, userName, userEmailAddress);
     }
 }
