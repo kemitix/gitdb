@@ -213,7 +213,7 @@ class GitDBTest implements WithAssertions {
 
     // When putting a key/value pair then a GitDbBranch is returned
     @Test
-    void putValue_thenReturnUpdatedGitDBBranch() throws IOException, ClassNotFoundException {
+    void putValue_thenReturnUpdatedGitDBBranch() throws IOException {
         //given
         final GitDBBranch originalBranch = gitDBBranch();
         //when
@@ -221,9 +221,6 @@ class GitDBTest implements WithAssertions {
         //then
         assertThat(updatedBranch).isNotNull();
         assertThat(updatedBranch).isNotSameAs(originalBranch);
-        final Optional<String> optional = updatedBranch.get("key-name");
-        assertThat(optional).contains("value");
-        //assertThat(originalBranch.get("key", String.class)).isEmpty();
     }
 
     // When getting a key that does exist then the value is returned inside an Optional
