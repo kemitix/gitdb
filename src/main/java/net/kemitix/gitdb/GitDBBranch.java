@@ -66,7 +66,7 @@ public class GitDBBranch {
     /**
      * Lookup a value for the key.
      *
-     * @param key        the key to lookup
+     * @param key the key to lookup
      * @return an Optional containing the value, if it exists, or empty if not
      * @throws IOException if there was an error reading the value
      */
@@ -89,6 +89,16 @@ public class GitDBBranch {
         final String commitMessage = String.format("Add key [%s] = [%s]", key, value);
         final ObjectId commitId = insertCommit(treeId, commitMessage);
         return updateBranch(commitId);
+    }
+
+    /**
+     * Removes a key and its value from the store.
+     *
+     * @param key the key to remove
+     * @return an updated branch without the key, or the original if the key was not found
+     */
+    public GitDBBranch remove(final String key) {
+        return this;
     }
 
     private ObjectId insertBlob(final byte[] blob) throws IOException {
@@ -114,5 +124,4 @@ public class GitDBBranch {
         final Ref updatedRef = gitDBRepo.writeHead(branchRef.getName(), commitId);
         return GitDBBranch.withRef(updatedRef, gitDBRepo, userName, userEmailAddress);
     }
-
 }
