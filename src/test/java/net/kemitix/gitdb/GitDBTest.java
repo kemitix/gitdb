@@ -224,6 +224,17 @@ class GitDBTest implements WithAssertions {
     }
 
     // When getting a key that does exist then the value is returned inside an Optional
+    @Test
+    void getValue_whenExists_thenReturnValueInOptional() throws IOException, ClassNotFoundException {
+        //given
+        final GitDBBranch originalBranch = gitDBBranch();
+        final GitDBBranch updatedBranch = originalBranch.put("key-name", "value");
+        //when
+        final Optional<String> result = updatedBranch.get("key-name");
+        //then
+        assertThat(result).contains("value");
+    }
+
     // When removing a key that does not exist then the GitDbBranch is returned
     // When removing a key that does exist then a GitDbBranch is returned
     // When starting a named transaction then GitDbTransaction is returned
