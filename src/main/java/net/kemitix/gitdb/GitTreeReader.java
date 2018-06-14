@@ -21,6 +21,7 @@
 
 package net.kemitix.gitdb;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.jgit.lib.Constants;
@@ -41,7 +42,7 @@ import java.util.stream.Stream;
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class GitTreeReader {
 
     private final Repository repository;
@@ -84,9 +85,9 @@ class GitTreeReader {
     /**
      * Represents the key/value pairs read from the tree.
      */
-    @Getter
-    @RequiredArgsConstructor
-    class NamedRevBlob {
+    @Getter(AccessLevel.PACKAGE)
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+    protected class NamedRevBlob {
 
         private final String name;
         private final RevBlob revBlob;
