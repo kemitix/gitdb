@@ -40,6 +40,7 @@ class GitDBRepo {
     private final Repository repository;
     private final ValueWriter valueWriter;
     private final KeyWriter keyWriter;
+    private final CommitWriter commitWriter;
 
     /**
      * Creates a new instance of this class.
@@ -50,6 +51,7 @@ class GitDBRepo {
         this.repository = repository;
         valueWriter = new ValueWriter(repository);
         keyWriter = new KeyWriter(repository);
+        commitWriter = new CommitWriter(repository);
     }
 
     /**
@@ -99,10 +101,10 @@ class GitDBRepo {
      * Insert a commit into the store, returning its unique id.
      *
      * @param treeId           id of the tree
+     * @param branchRef        the branch to commit to
      * @param message          the message
      * @param userName         the user name
      * @param userEmailAddress the user email address
-     * @param parent           the commit to link to as parent
      * @return the id of the commit
      * @throws IOException the commit could not be stored
      */
@@ -111,16 +113,9 @@ class GitDBRepo {
             final String message,
             final String userName,
             final String userEmailAddress,
-            final AnyObjectId parent
+            final Ref branchRef
     ) throws IOException {
-        final CommitBuilder commitBuilder = new CommitBuilder();
-        commitBuilder.setTreeId(treeId);
-        commitBuilder.setMessage(message);
-        final PersonIdent ident = new PersonIdent(userName, userEmailAddress);
-        commitBuilder.setAuthor(ident);
-        commitBuilder.setCommitter(ident);
-        commitBuilder.setParentId(parent);
-        return repository.getObjectDatabase().newInserter().insert(commitBuilder);
+        return commitWriter.write(treeId, branchRef, message, userName, userEmailAddress);
     }
 
     private Ref writeHead(
@@ -182,7 +177,7 @@ class GitDBRepo {
      * @param tree             the tree to commit onto the branch
      * @param message          the commit message
      * @param userName         the user name
-     * @param userEmailAddress the use email address
+     * @param userEmailAddress the user email address
      * @return the Ref of the updated branch
      * @throws IOException if there was an error writing the branch
      */
@@ -193,7 +188,26 @@ class GitDBRepo {
             final String userName,
             final String userEmailAddress
     ) throws IOException {
-        final ObjectId commitId = insertCommit(tree, message, userName, userEmailAddress, branchRef.getObjectId());
+        final ObjectId commitId = insertCommit(tree, message, userName, userEmailAddress, branchRef);
         return writeHead(branchRef.getName(), commitId);
+    }
+
+    /**
+     * Writes the initial commit into a repo (no parent).
+     *
+     * @param treeId      the to commit
+     * @param initMessage the commit message
+     * @param initUser    the user name
+     * @param initEmail   the user email address
+     * @return the id of the commit
+     * @throws IOException if there was an error writing the commit
+     */
+    ObjectId initialCommit(
+            final ObjectId treeId,
+            final String initMessage,
+            final String initUser,
+            final String initEmail
+    ) throws IOException {
+        return commitWriter.write(treeId, ObjectId.zeroId(), initMessage, initUser, initEmail);
     }
 }

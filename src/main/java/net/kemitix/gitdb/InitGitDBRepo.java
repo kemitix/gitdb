@@ -67,7 +67,7 @@ class InitGitDBRepo {
         final GitDBRepo repo = new GitDBRepo(repository);
         final ObjectId objectId = repo.insertBlob(new byte[0]);
         final ObjectId treeId = repo.insertNewTree(IS_GIT_DB, objectId);
-        final ObjectId commitId = repo.insertCommit(treeId, INIT_MESSAGE, INIT_USER, INIT_EMAIL, ObjectId.zeroId());
+        final ObjectId commitId = repo.initialCommit(treeId, INIT_MESSAGE, INIT_USER, INIT_EMAIL);
         createBranch(repository, commitId, MASTER);
     }
 
