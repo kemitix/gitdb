@@ -21,7 +21,6 @@
 
 package net.kemitix.gitdb;
 
-import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.eclipse.jgit.lib.*;
 
@@ -36,10 +35,22 @@ import java.util.*;
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
-@RequiredArgsConstructor
 class GitDBRepo {
 
     private final Repository repository;
+    private final ValueWriter valueWriter;
+    private final KeyWriter keyWriter;
+
+    /**
+     * Creates a new instance of this class.
+     *
+     * @param repository the Git Repository
+     */
+    GitDBRepo(final Repository repository) {
+        this.repository = repository;
+        valueWriter = new ValueWriter(repository);
+        keyWriter = new KeyWriter(repository);
+    }
 
     /**
      * Insert a blob into the store, returning its unique id.
@@ -49,7 +60,7 @@ class GitDBRepo {
      * @throws IOException the blob could not be stored
      */
     ObjectId insertBlob(final byte[] blob) throws IOException {
-        return repository.getObjectDatabase().newInserter().insert(Constants.OBJ_BLOB, blob);
+        return valueWriter.write(blob);
     }
 
     /**
@@ -64,8 +75,7 @@ class GitDBRepo {
             final String key,
             final ObjectId valueId
     ) throws IOException {
-        final TreeFormatter treeFormatter = new TreeFormatter();
-        return writeTree(key, valueId, treeFormatter);
+        return keyWriter.writeFirst(key, valueId);
     }
 
     /**
@@ -82,7 +92,7 @@ class GitDBRepo {
             final String key,
             final ObjectId valueId
     ) throws IOException {
-        return writeTree(key, valueId, treeFormatterForBranch(branchRef));
+        return keyWriter.write(key, valueId, branchRef);
     }
 
     /**
@@ -147,23 +157,6 @@ class GitDBRepo {
             return Optional.of(blob.get().blobAsString());
         }
         return Optional.empty();
-    }
-
-    private ObjectId writeTree(
-            final String key,
-            final ObjectId valueId,
-            final TreeFormatter treeFormatter
-    ) throws IOException {
-        treeFormatter.append(key, FileMode.REGULAR_FILE, valueId);
-        return repository.getObjectDatabase().newInserter().insert(treeFormatter);
-    }
-
-    private TreeFormatter treeFormatterForBranch(final Ref branchRef) throws IOException {
-        final TreeFormatter treeFormatter = new TreeFormatter();
-        final GitTreeReader gitTreeReader = new GitTreeReader(repository);
-        gitTreeReader.stream(branchRef)
-                .forEach(item -> treeFormatter.append(item.getName(), item.getRevBlob()));
-        return treeFormatter;
     }
 
     /**
