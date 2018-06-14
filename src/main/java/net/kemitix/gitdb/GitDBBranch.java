@@ -79,8 +79,7 @@ public class GitDBBranch {
      * @throws IOException if there was an error reading the value
      */
     public Optional<String> get(final String key) throws IOException {
-        return gitDBRepo.readValue(branchRef, KEY_PREFIX + key)
-                .map(String::new);
+        return gitDBRepo.readValue(branchRef, KEY_PREFIX + key);
     }
 
     /**

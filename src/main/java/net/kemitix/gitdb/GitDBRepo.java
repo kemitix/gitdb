@@ -165,14 +165,15 @@ class GitDBRepo {
      * @return an Optional containing the value if found, or empty
      * @throws IOException if there was an error reading the value
      */
-    Optional<byte[]> readValue(
+    Optional<String> readValue(
             final Ref branchRef,
             final String key
     ) throws IOException {
         try (TreeWalk treeWalk = getTreeWalk(branchRef)) {
             treeWalk.setFilter(PathFilter.create(key));
             if (treeWalk.next()) {
-                return Optional.of(repository.open(treeWalk.getObjectId(0), Constants.OBJ_BLOB).getBytes());
+                return Optional.of(new String(
+                        repository.open(treeWalk.getObjectId(0), Constants.OBJ_BLOB).getBytes()));
             }
         }
         return Optional.empty();
