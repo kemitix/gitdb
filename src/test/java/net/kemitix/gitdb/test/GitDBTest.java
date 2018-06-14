@@ -1,5 +1,8 @@
-package net.kemitix.gitdb;
+package net.kemitix.gitdb.test;
 
+import net.kemitix.gitdb.GitDB;
+import net.kemitix.gitdb.GitDBBranch;
+import net.kemitix.gitdb.InvalidRepositoryException;
 import org.assertj.core.api.WithAssertions;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
