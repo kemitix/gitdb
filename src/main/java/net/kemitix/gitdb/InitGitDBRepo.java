@@ -64,7 +64,7 @@ class InitGitDBRepo {
     }
 
     private void createInitialBranchOnMaster(final Repository repository) throws IOException {
-        final GitDBRepo repo = GitDBRepo.in(repository);
+        final GitDBRepo repo = new GitDBRepo(repository);
         final ObjectId objectId = repo.insertBlob(new byte[0]);
         final ObjectId treeId = repo.insertNewTree(IS_GIT_DB, objectId);
         final ObjectId commitId = repo.insertCommit(treeId, INIT_MESSAGE, INIT_USER, INIT_EMAIL, ObjectId.zeroId());

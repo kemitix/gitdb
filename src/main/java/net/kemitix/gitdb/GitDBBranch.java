@@ -28,7 +28,6 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -58,8 +57,8 @@ public class GitDBBranch {
     /**
      * Initialise the creation of new GitDBBranch instances.
      *
-     * @param repository the Git Repository
-     * @param userName the user name to record against changes
+     * @param repository       the Git Repository
+     * @param userName         the user name to record against changes
      * @param userEmailAddress the user's email address to record against changes
      * @return a Function for creating a GitDBBranch when supplied with a Ref for a branch
      */
@@ -68,7 +67,7 @@ public class GitDBBranch {
             final String userName,
             final String userEmailAddress
     ) {
-        return ref -> select(ref, GitDBRepo.in(repository), userName, userEmailAddress);
+        return ref -> select(ref, new GitDBRepo(repository), userName, userEmailAddress);
     }
 
     /**
@@ -91,11 +90,14 @@ public class GitDBBranch {
      * @throws IOException if there was an error writing the value
      */
     public GitDBBranch put(final String key, final String value) throws IOException {
-        final ObjectId objectId = insertBlob(value.getBytes(StandardCharsets.UTF_8));
-        final ObjectId treeId = insertTree(KEY_PREFIX + key, objectId);
-        final String commitMessage = String.format("Add key [%s] = [%s]", key, value);
-        final ObjectId commitId = insertCommit(treeId, commitMessage);
-        return updateBranch(commitId);
+        final ObjectId newTree = gitDBRepo.writeValue(branchRef, KEY_PREFIX + key, value);
+        final Ref newBranch =
+                gitDBRepo.writeCommit(branchRef, newTree, commitMessageForAdd(key, value), userName, userEmailAddress);
+        return select(newBranch, gitDBRepo, userName, userEmailAddress);
+    }
+
+    private String commitMessageForAdd(final String key, final String value) {
+        return String.format("Add key [%s] = [%s]", key, value);
     }
 
     /**
@@ -108,21 +110,4 @@ public class GitDBBranch {
         return this;
     }
 
-    private ObjectId insertBlob(final byte[] blob) throws IOException {
-        return gitDBRepo.insertBlob(blob);
-    }
-
-    private ObjectId insertTree(final String key, final ObjectId valueId) throws IOException {
-        return gitDBRepo.insertTree(branchRef, key, valueId);
-    }
-
-    private ObjectId insertCommit(final ObjectId treeId, final String message) throws IOException {
-        final ObjectId headCommitId = branchRef.getObjectId();
-        return gitDBRepo.insertCommit(treeId, message, userName, userEmailAddress, headCommitId);
-    }
-
-    private GitDBBranch updateBranch(final ObjectId commitId) throws IOException {
-        final Ref updatedRef = gitDBRepo.writeHead(branchRef.getName(), commitId);
-        return select(updatedRef, gitDBRepo, userName, userEmailAddress);
-    }
 }

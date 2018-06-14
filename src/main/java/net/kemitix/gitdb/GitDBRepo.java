@@ -21,12 +21,9 @@
 
 package net.kemitix.gitdb;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.val;
 import org.eclipse.jgit.lib.*;
-import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.treewalk.TreeWalk;
-import org.eclipse.jgit.treewalk.filter.PathFilter;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -39,20 +36,10 @@ import java.util.*;
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor
 class GitDBRepo {
 
     private final Repository repository;
-
-    /**
-     * Create a GitDBRepo wrapper for the Repository.
-     *
-     * @param repository the repository to wrap
-     * @return the GitDBRepo wrapper
-     */
-    public static GitDBRepo in(final Repository repository) {
-        return new GitDBRepo(repository);
-    }
 
     /**
      * Insert a blob into the store, returning its unique id.
@@ -98,15 +85,6 @@ class GitDBRepo {
         return writeTree(key, valueId, treeFormatterForBranch(branchRef));
     }
 
-    private ObjectId writeTree(
-            final String key,
-            final ObjectId valueId,
-            final TreeFormatter treeFormatter
-    ) throws IOException {
-        treeFormatter.append(key, FileMode.REGULAR_FILE, valueId);
-        return repository.getObjectDatabase().newInserter().insert(treeFormatter);
-    }
-
     /**
      * Insert a commit into the store, returning its unique id.
      *
@@ -135,15 +113,7 @@ class GitDBRepo {
         return repository.getObjectDatabase().newInserter().insert(commitBuilder);
     }
 
-    /**
-     * Updates the branch to point to the new commit.
-     *
-     * @param branchName the branch to update
-     * @param commitId   the commit to point the branch at
-     * @return the Ref of the updated branch
-     * @throws IOException if there was an error writing the branch
-     */
-    Ref writeHead(
+    private Ref writeHead(
             final String branchName,
             final ObjectId commitId
     ) throws IOException {
@@ -169,33 +139,68 @@ class GitDBRepo {
             final Ref branchRef,
             final String key
     ) throws IOException {
-        try (TreeWalk treeWalk = getTreeWalk(branchRef)) {
-            treeWalk.setFilter(PathFilter.create(key));
-            if (treeWalk.next()) {
-                return Optional.of(new String(
-                        repository.open(treeWalk.getObjectId(0), Constants.OBJ_BLOB).getBytes()));
-            }
+        val blob = new GitTreeReader(repository)
+                .treeFilter(key)
+                .stream(branchRef)
+                .findFirst();
+        if (blob.isPresent()) {
+            return Optional.of(blob.get().blobAsString());
         }
         return Optional.empty();
     }
 
+    private ObjectId writeTree(
+            final String key,
+            final ObjectId valueId,
+            final TreeFormatter treeFormatter
+    ) throws IOException {
+        treeFormatter.append(key, FileMode.REGULAR_FILE, valueId);
+        return repository.getObjectDatabase().newInserter().insert(treeFormatter);
+    }
+
     private TreeFormatter treeFormatterForBranch(final Ref branchRef) throws IOException {
         final TreeFormatter treeFormatter = new TreeFormatter();
-        try (TreeWalk treeWalk = getTreeWalk(branchRef)) {
-            while (treeWalk.next()) {
-                treeFormatter.append(
-                        treeWalk.getNameString(),
-                        new RevWalk(repository).lookupBlob(treeWalk.getObjectId(0)));
-            }
-        }
+        final GitTreeReader gitTreeReader = new GitTreeReader(repository);
+        gitTreeReader.stream(branchRef)
+                .forEach(item -> treeFormatter.append(item.getName(), item.getRevBlob()));
         return treeFormatter;
     }
 
-    private TreeWalk getTreeWalk(final Ref branchRef) throws IOException {
-        final TreeWalk treeWalk = new TreeWalk(repository);
-        treeWalk.addTree(new RevWalk(repository).parseCommit(branchRef.getObjectId()).getTree());
-        treeWalk.setRecursive(false);
-        return treeWalk;
+    /**
+     * Add the key/value to the repo, returning the tree containing the update.
+     *
+     * <p>N.B. this creates a tree that has not been committed remains unaware of the update.</p>
+     *
+     * @param branchRef the branch to start from
+     * @param key       the key to place the value under
+     * @param value     the value (must be Serializable)
+     * @return the id of the updated tree containing the update
+     * @throws IOException if there was an error writing the value
+     */
+    ObjectId writeValue(final Ref branchRef, final String key, final String value) throws IOException {
+        final ObjectId blob = insertBlob(value.getBytes(StandardCharsets.UTF_8));
+        return insertTree(branchRef, key, blob);
     }
 
+    /**
+     * Updates the branch to point to the new commit.
+     *
+     * @param branchRef        the branch to update
+     * @param tree             the tree to commit onto the branch
+     * @param message          the commit message
+     * @param userName         the user name
+     * @param userEmailAddress the use email address
+     * @return the Ref of the updated branch
+     * @throws IOException if there was an error writing the branch
+     */
+    Ref writeCommit(
+            final Ref branchRef,
+            final ObjectId tree,
+            final String message,
+            final String userName,
+            final String userEmailAddress
+    ) throws IOException {
+        final ObjectId commitId = insertCommit(tree, message, userName, userEmailAddress, branchRef.getObjectId());
+        return writeHead(branchRef.getName(), commitId);
+    }
 }
