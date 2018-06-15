@@ -26,8 +26,6 @@ import org.eclipse.jgit.lib.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 
 /**
@@ -42,6 +40,7 @@ class GitDBRepo {
     private final KeyWriter keyWriter;
     private final CommitWriter commitWriter;
     private final KeyRemover keyRemover;
+    private final HeadWriter headWriter;
 
     /**
      * Creates a new instance of this class.
@@ -54,6 +53,7 @@ class GitDBRepo {
         keyWriter = new KeyWriter(repository);
         commitWriter = new CommitWriter(repository);
         keyRemover = new KeyRemover(repository);
+        headWriter = new HeadWriter(repository);
     }
 
     /**
@@ -120,20 +120,6 @@ class GitDBRepo {
         return commitWriter.write(treeId, branchRef, message, userName, userEmailAddress);
     }
 
-    private Ref writeHead(
-            final String branchName,
-            final ObjectId commitId
-    ) throws IOException {
-        final Path branchRefPath = repository
-                .getDirectory()
-                .toPath()
-                .resolve(branchName)
-                .toAbsolutePath();
-        final byte[] commitIdBytes = commitId.name().getBytes(StandardCharsets.UTF_8);
-        Files.write(branchRefPath, commitIdBytes);
-        return repository.findRef(branchName);
-    }
-
     /**
      * Reads a value from the branch with the given key.
      *
@@ -191,7 +177,7 @@ class GitDBRepo {
             final String userEmailAddress
     ) throws IOException {
         final ObjectId commitId = insertCommit(tree, message, userName, userEmailAddress, branchRef);
-        return writeHead(branchRef.getName(), commitId);
+        return headWriter.write(branchRef.getName(), commitId);
     }
 
     /**
@@ -237,6 +223,6 @@ class GitDBRepo {
      * @throws IOException error writing the branch
      */
     Ref createBranch(final Ref branchRef, final String name) throws IOException {
-        return writeHead(branchRef.getName(), branchRef.getObjectId());
+        return headWriter.write(branchRef.getName(), branchRef.getObjectId());
     }
 }
