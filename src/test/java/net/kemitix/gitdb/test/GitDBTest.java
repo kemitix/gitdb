@@ -461,6 +461,21 @@ class GitDBTest implements WithAssertions {
         assertThat(secondTransaction).isNotSameAs(firstTransaction);
     }
 
+    // When start a named transaction in a transaction then a new transaction is created
+    @Test
+    void startNamedTransaction_whenTransaction_thenReturnAnotherTransaction() throws IOException {
+        //given
+        final GitDBBranch initialBranch = gitDBBranch();
+        final GitDBTransaction firstTransaction = initialBranch.transaction();
+        final String name = stringSupplier.get();
+        //when
+        final GitDBTransaction secondTransaction = firstTransaction.transaction(name);
+        //then
+        assertThat(secondTransaction).isNotNull();
+        assertThat(secondTransaction).isNotSameAs(firstTransaction);
+        assertThat(secondTransaction.name()).isEqualTo(name);
+    }
+
     // Given a GitDbTransaction handle with a added, updated and removed keys
     // When closing the transaction an GitDbBranch is returned
     // When closing the transaction the added key/value is found
