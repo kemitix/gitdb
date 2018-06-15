@@ -246,7 +246,7 @@ class GitDBTest implements WithAssertions {
 
     // When getting a key that does exist then the value is returned inside an Optional
     @Test
-    void getValue_whenExists_thenReturnValueInOptional() throws IOException, ClassNotFoundException {
+    void getKey_whenExists_thenReturnValueInOptional() throws IOException, ClassNotFoundException {
         //given
         final String key = stringSupplier.get();
         final String value = stringSupplier.get();
@@ -432,6 +432,20 @@ class GitDBTest implements WithAssertions {
         final Optional<Version> formatVersion = transaction.getFormatVersion();
         //then
         assertThat(formatVersion).contains(GitDB.VERSION);
+    }
+
+    // When get key/value in a transaction then the value is returned
+    @Test
+    void getKey_whenTransaction_thenReturnValueInOptional() throws IOException {
+        //given
+        final String key = stringSupplier.get();
+        final String value = stringSupplier.get();
+        final GitDBBranch gitDBBranch = gitDBBranchWithKeyValue(key, value);
+        final GitDBTransaction transaction = gitDBBranch.transaction();
+        //when
+        final Optional<String> result = transaction.get(key);
+        //then
+        assertThat(result).contains(value);
     }
 
     // Given a GitDbTransaction handle with a added, updated and removed keys

@@ -44,8 +44,8 @@ class GitDBTransactionImpl implements GitDBTransaction {
     }
 
     @Override
-    public Optional<String> get(String key) {
-        return Optional.empty();
+    public Optional<String> get(String key) throws IOException {
+        return branch.get(key);
     }
 
     @Override
