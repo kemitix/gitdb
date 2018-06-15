@@ -32,12 +32,12 @@ import java.util.Optional;
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
-class UnnamedTransaction implements GitDBTransaction {
+class GitDBTransactionImpl implements GitDBTransaction {
 
     private final GitDBBranch base;
     private final GitDBBranch branch;
 
-    UnnamedTransaction(final GitDBBranch base, final GitDBBranch branch) {
+    GitDBTransactionImpl(final GitDBBranch base, final GitDBBranch branch) {
         this.base = base;
         this.branch = branch;
     }
