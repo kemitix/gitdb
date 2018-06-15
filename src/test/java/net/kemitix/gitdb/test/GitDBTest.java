@@ -16,14 +16,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.*;
 import java.nio.file.*;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assumptions.assumeThat;
 
 @ExtendWith(MockitoExtension.class)
 class GitDBTest implements WithAssertions {
 
-    private String userName = "user name";
-    private String userEmailAddress = "user@email.com";
+    private final Supplier<String> stringSupplier = UUID.randomUUID()::toString;
+    private String userName = stringSupplier.get();
+    private String userEmailAddress = stringSupplier.get();
 
     // When initialising a repo in a dir that doesn't exist then a bare repo is created
     @Test
@@ -242,12 +245,14 @@ class GitDBTest implements WithAssertions {
     @Test
     void getValue_whenExists_thenReturnValueInOptional() throws IOException, ClassNotFoundException {
         //given
+        final String key = stringSupplier.get();
+        final String value = stringSupplier.get();
         final GitDBBranch originalBranch = gitDBBranch();
-        final GitDBBranch updatedBranch = originalBranch.put("key-name", "value");
+        final GitDBBranch updatedBranch = originalBranch.put(key, value);
         //when
-        final Optional<String> result = updatedBranch.get("key-name");
+        final Optional<String> result = updatedBranch.get(key);
         //then
-        assertThat(result).contains("value");
+        assertThat(result).contains(value);
     }
 
     // When removing a key that does not exist then the GitDbBranch is returned
@@ -265,33 +270,43 @@ class GitDBTest implements WithAssertions {
     @Test
     void removeKey_whenExists_thenReturnUpdatedBranch() throws IOException {
         //given
-        final GitDBBranch originalBranch = gitDBBranch().put("key-name", "value");
+        final String key = stringSupplier.get();
+        final String value = stringSupplier.get();
+        final GitDBBranch originalBranch = gitDBBranchWithKeyValue(key, value);
         //when
-        final GitDBBranch updatedBranch = originalBranch.remove("key-name");
+        final GitDBBranch updatedBranch = originalBranch.remove(key);
         //then
         assertThat(updatedBranch).isNotSameAs(originalBranch);
+    }
+
+    private GitDBBranch gitDBBranchWithKeyValue(final String key, final String value) throws IOException {
+        return gitDBBranch().put(key, value);
     }
 
     // When removing a key that does exist then original GitDbBranch can still find it
     @Test
     void removeKey_whenExists_thenOriginalCanStillFind() throws IOException {
         //given
-        final GitDBBranch originalBranch = gitDBBranch().put("key-name", "value");
+        final String key = stringSupplier.get();
+        final String value = stringSupplier.get();
+        final GitDBBranch originalBranch = gitDBBranchWithKeyValue(key, value);
         //when
-        final GitDBBranch updatedBranch = originalBranch.remove("key-name");
+        final GitDBBranch updatedBranch = originalBranch.remove(key);
         //then
-        assertThat(originalBranch.get("key-name")).contains("value");
+        assertThat(originalBranch.get(key)).contains(value);
     }
 
     // When removing a key that does exist then the updated GitDbBranch can't find it
     @Test
     void removeKey_whenExists_thenUpdatedCanNotFind() throws IOException {
         //given
-        final GitDBBranch originalBranch = gitDBBranch().put("key-name", "value");
+        final String key = stringSupplier.get();
+        final String value = stringSupplier.get();
+        final GitDBBranch originalBranch = gitDBBranchWithKeyValue(key, value);
         //when
-        final GitDBBranch updatedBranch = originalBranch.remove("key-name");
+        final GitDBBranch updatedBranch = originalBranch.remove(key);
         //then
-        assertThat(updatedBranch.get("key-name")).isEmpty();
+        assertThat(updatedBranch.get(key)).isEmpty();
     }
 
     // When starting a named transaction then GitDbTransaction is returned
