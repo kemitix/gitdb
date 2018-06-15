@@ -76,6 +76,11 @@ class GitDBTransactionImpl implements GitDBTransaction {
     }
 
     @Override
+    public GitDBBranch close() {
+        return base;
+    }
+
+    @Override
     public String getCommitId() {
         return branch.getCommitId();
     }

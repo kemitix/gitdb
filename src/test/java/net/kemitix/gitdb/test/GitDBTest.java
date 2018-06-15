@@ -14,8 +14,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.*;
-import java.nio.file.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.Files;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -26,8 +32,18 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 class GitDBTest implements WithAssertions {
 
     private final Supplier<String> stringSupplier = UUID.randomUUID()::toString;
-    private String userName = stringSupplier.get();
-    private String userEmailAddress = stringSupplier.get();
+    private final String userName = stringSupplier.get();
+    private final String userEmailAddress = stringSupplier.get();
+
+    private static void tree(final Path dbDir, final PrintStream out) throws IOException {
+        final Process treeProcess = new ProcessBuilder("tree", dbDir.toString()).start();
+        try (final BufferedReader reader = new BufferedReader(new InputStreamReader(treeProcess.getInputStream()))) {
+            String line;
+            while (null != (line = reader.readLine())) {
+                out.println("line = " + line);
+            }
+        }
+    }
 
     // When initialising a repo in a dir that doesn't exist then a bare repo is created
     @Test
@@ -476,20 +492,22 @@ class GitDBTest implements WithAssertions {
         assertThat(secondTransaction.getName()).isEqualTo(name);
     }
 
+    // When closing the transaction with no additional commits then the base GirDBBranch is returned
+    @Test
+    void closeTransaction_whenNoCommits_thenReturnBaseBranch() throws IOException {
+        //given
+        final GitDBBranch baseBranch = gitDBBranch();
+        final GitDBTransaction transaction = baseBranch.transaction();
+        //when
+        final GitDBBranch mergedBranch = transaction.close();
+        //then
+        assertThat(mergedBranch).isSameAs(baseBranch);
+    }
+
     // Given a GitDbTransaction handle with a added, updated and removed keys
     // When closing the transaction an GitDbBranch is returned
     // When closing the transaction the added key/value is found
     // When closing the transaction the updated value is found
     // When closing the transaction the removed key is not found
-
-    private static void tree(final Path dbDir, final PrintStream out) throws IOException {
-        final Process treeProcess = new ProcessBuilder("tree", dbDir.toString()).start();
-        try (final BufferedReader reader = new BufferedReader(new InputStreamReader(treeProcess.getInputStream()))) {
-            String line;
-            while (null != (line = reader.readLine())) {
-                out.println("line = " + line);
-            }
-        }
-    }
 
 }

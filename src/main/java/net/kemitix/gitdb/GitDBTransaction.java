@@ -34,4 +34,11 @@ public interface GitDBTransaction extends GitDBBranch {
      * @return the transaction name
      */
     String getName();
+
+    /**
+     * Close the transaction, merging results into the base branch.
+     *
+     * @return the merged branch
+     */
+    GitDBBranch close();
 }
