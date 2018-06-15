@@ -326,6 +326,18 @@ class GitDBTest implements WithAssertions {
     }
 
     // When starting an anonymous transaction then a GitDbTransaction is returned
+    @Test
+    void startAnonymousTransaction_thenReturnGitDBTransaction() throws IOException {
+        //given
+        final String key = stringSupplier.get();
+        final String value = stringSupplier.get();
+        final GitDBBranch gitDBBranch = gitDBBranchWithKeyValue(key, value);
+        //when
+        final GitDBTransaction transaction = gitDBBranch.transaction();
+        //then
+        assertThat(transaction).isNotNull();
+        assertThat(transaction.name()).isNotNull();
+    }
 
     // Given a GitDbTransaction handle (i.e. a new branch)
     // When putting a new key/value pair then the original GitDbBranch can't find it
