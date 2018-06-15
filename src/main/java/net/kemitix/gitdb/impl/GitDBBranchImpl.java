@@ -126,6 +126,11 @@ class GitDBBranchImpl implements GitDBBranch {
         return name;
     }
 
+    @Override
+    public String getCommitId() {
+        return branchRef.getObjectId().name();
+    }
+
     private String commitMessageForAdd(final String key, final String value) {
         return String.format("Add key [%s] = [%s]", key, value);
     }

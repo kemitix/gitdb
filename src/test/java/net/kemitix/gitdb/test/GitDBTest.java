@@ -339,6 +339,20 @@ class GitDBTest implements WithAssertions {
         assertThat(transaction.name()).isNotNull();
     }
 
+    // When starting an anonymous transaction then original branch is unchanged
+    @Test
+    void startAnonymousTransaction_thenOriginalBranchUnchanged() throws IOException {
+        //given
+        final GitDB gitDB = gitDB(dirDoesNotExist());
+        final GitDBBranch gitDBBranch = gitDB.branch("master").get();
+        final String commitId = gitDBBranch.getCommitId();
+        //when
+        final GitDBTransaction transaction = gitDBBranch.transaction();
+        //then
+        assertThat(gitDBBranch.getCommitId()).isEqualTo(commitId);
+        assertThat(gitDB.branch("master").map(GitDBBranch::getCommitId)).contains(commitId);
+    }
+
     // Given a GitDbTransaction handle (i.e. a new branch)
     // When putting a new key/value pair then the original GitDbBranch can't find it
     @Test
