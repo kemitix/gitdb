@@ -59,8 +59,8 @@ class GitDBTransactionImpl implements GitDBTransaction {
     }
 
     @Override
-    public Optional<Version> getFormatVersion() {
-        return Optional.empty();
+    public Optional<Version> getFormatVersion() throws IOException {
+        return branch.getFormatVersion();
     }
 
     @Override

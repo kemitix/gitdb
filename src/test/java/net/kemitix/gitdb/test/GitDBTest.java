@@ -422,6 +422,18 @@ class GitDBTest implements WithAssertions {
         assertThat(removed.get(key)).isEmpty();
     }
 
+    // When get format version in transaction then the version is the same
+    @Test
+    void getFormatVersion_whenTransaction_thenFormatIsSame() throws IOException {
+        //given
+        final GitDBBranch gitDBBranch = gitDBBranch();
+        final GitDBTransaction transaction = gitDBBranch.transaction();
+        //when
+        final Optional<Version> formatVersion = transaction.getFormatVersion();
+        //then
+        assertThat(formatVersion).contains(GitDB.VERSION);
+    }
+
     // Given a GitDbTransaction handle with a added, updated and removed keys
     // When closing the transaction an GitDbBranch is returned
     // When closing the transaction the added key/value is found
