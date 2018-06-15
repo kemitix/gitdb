@@ -25,6 +25,7 @@ import com.github.zafarkhaja.semver.Version;
 import net.kemitix.gitdb.GitDBBranch;
 import net.kemitix.gitdb.GitDBTransaction;
 
+import java.io.IOException;
 import java.util.Optional;
 
 /**
@@ -48,8 +49,8 @@ class GitDBTransactionImpl implements GitDBTransaction {
     }
 
     @Override
-    public GitDBBranch put(String key, String value) {
-        return null;
+    public GitDBBranch put(String key, String value) throws IOException {
+        return branch.put(key, value);
     }
 
     @Override
