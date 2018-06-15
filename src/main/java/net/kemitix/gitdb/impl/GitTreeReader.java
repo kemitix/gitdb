@@ -55,7 +55,8 @@ class GitTreeReader {
      */
     Stream<NamedRevBlob> stream(final Ref branchRef) throws IOException {
         final TreeWalk treeWalk = new TreeWalk(repository);
-        treeWalk.addTree(new RevWalk(repository).parseCommit(branchRef.getObjectId()).getTree());
+        final RevWalk revWalk = new RevWalk(repository);
+        treeWalk.addTree(revWalk.parseCommit(branchRef.getObjectId()).getTree());
         treeWalk.setRecursive(false);
         Optional.ofNullable(treeFilter)
                 .ifPresent(treeWalk::setFilter);
@@ -63,7 +64,7 @@ class GitTreeReader {
         while (treeWalk.next()) {
             builder.add(new NamedRevBlob(
                     treeWalk.getNameString(),
-                    new RevWalk(repository).lookupBlob(treeWalk.getObjectId(0)),
+                    revWalk.lookupBlob(treeWalk.getObjectId(0)),
                     repository));
         }
         return builder.build();
