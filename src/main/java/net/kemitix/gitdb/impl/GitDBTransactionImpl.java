@@ -54,8 +54,8 @@ class GitDBTransactionImpl implements GitDBTransaction {
     }
 
     @Override
-    public GitDBBranch remove(String key) {
-        return null;
+    public GitDBBranch remove(String key) throws IOException {
+        return branch.remove(key);
     }
 
     @Override
