@@ -75,16 +75,18 @@ public interface GitDBBranch {
      * Begins a new anonymous transaction.
      *
      * @return a new Transaction
+     * @throws IOException error writing transaction branch
      */
     GitDBTransaction transaction() throws IOException;
 
     /**
      * Begins a new named transaction.
      *
-     * @param name the transaction name
+     * @param transactionName the transaction name
      * @return a new Transaction
+     * @throws IOException error writing transaction branch
      */
-    GitDBTransaction transaction(String name) throws IOException;
+    GitDBTransaction transaction(String transactionName) throws IOException;
 
     /**
      * Gets the name of the branch.

@@ -228,6 +228,14 @@ class GitDBRepo {
         return keyRemover.remove(branchRef, key);
     }
 
+    /**
+     * Create a new branch.
+     *
+     * @param branchRef the branch source
+     * @param name the name of the new branch
+     * @return the Ref of the new branch
+     * @throws IOException error writing the branch
+     */
     Ref createBranch(final Ref branchRef, final String name) throws IOException {
         return writeHead(branchRef.getName(), branchRef.getObjectId());
     }

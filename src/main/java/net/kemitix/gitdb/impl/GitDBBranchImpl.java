@@ -110,9 +110,9 @@ class GitDBBranchImpl implements GitDBBranch {
     }
 
     @Override
-    public GitDBTransaction transaction(String name) throws IOException {
+    public GitDBTransaction transaction(final String transactionName) throws IOException {
         final Ref ref = gitDBRepo.createBranch(branchRef, UUID.randomUUID().toString());
-        final GitDBBranch branch = new GitDBBranchImpl(ref, gitDBRepo, userName, userEmailAddress, name);
+        final GitDBBranch branch = new GitDBBranchImpl(ref, gitDBRepo, userName, userEmailAddress, transactionName);
         return new GitDBTransactionImpl(this, branch);
     }
 

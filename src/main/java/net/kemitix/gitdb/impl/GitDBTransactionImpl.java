@@ -22,6 +22,7 @@
 package net.kemitix.gitdb.impl;
 
 import com.github.zafarkhaja.semver.Version;
+import lombok.RequiredArgsConstructor;
 import net.kemitix.gitdb.GitDBBranch;
 import net.kemitix.gitdb.GitDBTransaction;
 
@@ -33,28 +34,24 @@ import java.util.Optional;
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
+@RequiredArgsConstructor
 class GitDBTransactionImpl implements GitDBTransaction {
 
     private final GitDBBranch base;
     private final GitDBBranch branch;
 
-    GitDBTransactionImpl(final GitDBBranch base, final GitDBBranch branch) {
-        this.base = base;
-        this.branch = branch;
-    }
-
     @Override
-    public Optional<String> get(String key) throws IOException {
+    public Optional<String> get(final String key) throws IOException {
         return branch.get(key);
     }
 
     @Override
-    public GitDBBranch put(String key, String value) throws IOException {
+    public GitDBBranch put(final String key, final String value) throws IOException {
         return branch.put(key, value);
     }
 
     @Override
-    public GitDBBranch remove(String key) throws IOException {
+    public GitDBBranch remove(final String key) throws IOException {
         return branch.remove(key);
     }
 
@@ -69,8 +66,8 @@ class GitDBTransactionImpl implements GitDBTransaction {
     }
 
     @Override
-    public GitDBTransaction transaction(String name) throws IOException {
-        return branch.transaction(name);
+    public GitDBTransaction transaction(final String transactionName) throws IOException {
+        return branch.transaction(transactionName);
     }
 
     @Override
