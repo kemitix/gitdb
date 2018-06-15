@@ -64,8 +64,8 @@ class GitDBTransactionImpl implements GitDBTransaction {
     }
 
     @Override
-    public GitDBTransaction transaction() {
-        return null;
+    public GitDBTransaction transaction() throws IOException {
+        return branch.transaction();
     }
 
     @Override
