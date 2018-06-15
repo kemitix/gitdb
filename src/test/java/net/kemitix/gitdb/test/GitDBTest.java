@@ -343,6 +343,19 @@ class GitDBTest implements WithAssertions {
 
     // Given a GitDbTransaction handle (i.e. a new branch)
     // When putting a new key/value pair then the original GitDbBranch can't find it
+    @Test
+    void putValue_whenTransaction_thenOriginalBranchNotFind() throws IOException {
+        //given
+        final GitDBBranch originalBranch = gitDBBranch();
+        final GitDBTransaction transaction = originalBranch.transaction();
+        final String key = stringSupplier.get();
+        final String value = stringSupplier.get();
+        //when
+        final GitDBBranch updatedBranch = transaction.put(key, value);
+        //then
+        assertThat(originalBranch.get(key)).isEmpty();
+    }
+
     // When putting an existing key/value pair then the original GitDbBranch finds the original value
     // When removing a key then the original GitDbBRanch still finds it
 
