@@ -331,9 +331,7 @@ class GitDBTest implements WithAssertions {
     @Test
     void startAnonymousTransaction_thenReturnGitDBTransaction() throws IOException {
         //given
-        final String key = stringSupplier.get();
-        final String value = stringSupplier.get();
-        final GitDBBranch gitDBBranch = gitDBBranchWithKeyValue(key, value);
+        final GitDBBranch gitDBBranch = gitDBBranch();
         //when
         final GitDBTransaction transaction = gitDBBranch.transaction();
         //then
