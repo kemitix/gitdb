@@ -41,6 +41,7 @@ class GitDBRepo {
     private final ValueWriter valueWriter;
     private final KeyWriter keyWriter;
     private final CommitWriter commitWriter;
+    private final KeyRemover keyRemover;
 
     /**
      * Creates a new instance of this class.
@@ -52,6 +53,7 @@ class GitDBRepo {
         valueWriter = new ValueWriter(repository);
         keyWriter = new KeyWriter(repository);
         commitWriter = new CommitWriter(repository);
+        keyRemover = new KeyRemover(repository);
     }
 
     /**
@@ -157,11 +159,11 @@ class GitDBRepo {
     /**
      * Add the key/value to the repo, returning the tree containing the update.
      *
-     * <p>N.B. this creates a tree that has not been committed remains unaware of the update.</p>
+     * <p>N.B. this creates a tree that has not been committed, the branch remains unaware of the update.</p>
      *
      * @param branchRef the branch to start from
      * @param key       the key to place the value under
-     * @param value     the value (must be Serializable)
+     * @param value     the value
      * @return the id of the updated tree containing the update
      * @throws IOException if there was an error writing the value
      */
@@ -209,5 +211,20 @@ class GitDBRepo {
             final String initEmail
     ) throws IOException {
         return commitWriter.write(treeId, ObjectId.zeroId(), initMessage, initUser, initEmail);
+    }
+
+    /**
+     * Remove the key from the branch, returning the tree containing the update.
+     *
+     * <p>N.B. this creates a tree that has not been committed, the branch remains unaware of the update.</p>
+     *
+     * @param branchRef the branch to start from
+     * @param key       the key to place the value under
+     * @return an Optional containing the id of the updated tree containing the update, if the key was found, or an
+     * empty Optional if there key was not found, the there was no changes made
+     * @throws IOException if there was an error writing the value
+     */
+    Optional<ObjectId> removeKey(final Ref branchRef, final String key) throws IOException {
+        return keyRemover.remove(branchRef, key);
     }
 }

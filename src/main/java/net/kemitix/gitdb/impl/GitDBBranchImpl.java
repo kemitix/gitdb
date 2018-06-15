@@ -85,12 +85,26 @@ class GitDBBranchImpl implements GitDBBranch {
     }
 
     @Override
-    public GitDBBranch remove(final String key) {
+    public GitDBBranch remove(final String key) throws IOException {
+        final Optional<ObjectId> newTree = gitDBRepo.removeKey(branchRef, KEY_PREFIX + key);
+        if (newTree.isPresent()) {
+            final Ref newBranch =
+                    gitDBRepo.writeCommit(
+                            branchRef, newTree.get(),
+                            commitMessageForRemove(key),
+                            userName,
+                            userEmailAddress);
+            return select(newBranch, gitDBRepo, userName, userEmailAddress);
+        }
         return this;
     }
 
     private String commitMessageForAdd(final String key, final String value) {
         return String.format("Add key [%s] = [%s]", key, value);
+    }
+
+    private String commitMessageForRemove(final String key) {
+        return String.format("Remove Key [%s]", key);
     }
 
 }

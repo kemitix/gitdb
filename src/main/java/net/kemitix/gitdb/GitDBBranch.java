@@ -46,7 +46,7 @@ public interface GitDBBranch {
      * @param key   the key to place the value under
      * @param value the value (must be Serializable)
      * @return an updated branch containing the new key/value
-     * @throws IOException if there was an error writing the value
+     * @throws IOException if there was an error writing the key/value
      */
     GitDBBranch put(String key, String value) throws IOException;
 
@@ -55,6 +55,7 @@ public interface GitDBBranch {
      *
      * @param key the key to remove
      * @return an updated branch without the key, or the original if the key was not found
+     * @throws IOException if there was an error removing the key/value
      */
-    GitDBBranch remove(String key);
+    GitDBBranch remove(String key) throws IOException;
 }

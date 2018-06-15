@@ -249,6 +249,16 @@ class GitDBTest implements WithAssertions {
     }
 
     // When removing a key that does exist then a GitDbBranch is returned
+    @Test
+    void removeKey_whenExists_thenReturnUpdatedBranch() throws IOException {
+        //given
+        final GitDBBranch originalBranch = gitDBBranch().put("key-name", "value");
+        //when
+        final GitDBBranch updatedBranch = originalBranch.remove("key-name");
+        //then
+        assertThat(updatedBranch).isNotSameAs(originalBranch);
+    }
+
     // When removing a key that does exist then original GitDbBranch can still find it
     // When removing a key that does exist then the updated GitDbBranch can't find it
 
