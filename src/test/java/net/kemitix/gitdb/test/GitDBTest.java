@@ -324,7 +324,7 @@ class GitDBTest implements WithAssertions {
         final GitDBTransaction transaction = gitDBBranch.transaction(name);
         //then
         assertThat(transaction).isNotNull();
-        assertThat(transaction.name()).isEqualTo(name);
+        assertThat(transaction.getName()).isEqualTo(name);
     }
 
     // When starting an anonymous transaction then a GitDbTransaction is returned
@@ -336,7 +336,7 @@ class GitDBTest implements WithAssertions {
         final GitDBTransaction transaction = gitDBBranch.transaction();
         //then
         assertThat(transaction).isNotNull();
-        assertThat(transaction.name()).isNotNull();
+        assertThat(transaction.getName()).isNotNull();
     }
 
     // When starting an anonymous transaction then original branch is unchanged
@@ -473,7 +473,7 @@ class GitDBTest implements WithAssertions {
         //then
         assertThat(secondTransaction).isNotNull();
         assertThat(secondTransaction).isNotSameAs(firstTransaction);
-        assertThat(secondTransaction.name()).isEqualTo(name);
+        assertThat(secondTransaction.getName()).isEqualTo(name);
     }
 
     // Given a GitDbTransaction handle with a added, updated and removed keys

@@ -33,5 +33,5 @@ public interface GitDBTransaction extends GitDBBranch {
      *
      * @return the transaction name
      */
-    String name();
+    String getName();
 }

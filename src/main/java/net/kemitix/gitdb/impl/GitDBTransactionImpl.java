@@ -71,8 +71,8 @@ class GitDBTransactionImpl implements GitDBTransaction {
     }
 
     @Override
-    public String name() {
-        return branch.name();
+    public String getName() {
+        return branch.getName();
     }
 
     @Override

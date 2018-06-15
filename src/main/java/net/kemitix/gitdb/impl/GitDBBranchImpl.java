@@ -23,6 +23,7 @@ package net.kemitix.gitdb.impl;
 
 import com.github.zafarkhaja.semver.Version;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.kemitix.gitdb.GitDBBranch;
 import net.kemitix.gitdb.GitDBTransaction;
@@ -48,6 +49,7 @@ class GitDBBranchImpl implements GitDBBranch {
     private final GitDBRepo gitDBRepo;
     private final String userName;
     private final String userEmailAddress;
+    @Getter
     private final String name;
 
     private static GitDBBranch select(
@@ -83,8 +85,8 @@ class GitDBBranchImpl implements GitDBBranch {
     @Override
     public GitDBBranch put(final String key, final String value) throws IOException {
         final ObjectId newTree = gitDBRepo.writeValue(branchRef, KEY_PREFIX + key, value);
-        final Ref newBranch =
-                gitDBRepo.writeCommit(branchRef, newTree, commitMessageForAdd(key, value), userName, userEmailAddress);
+        final String message = String.format("Add key [%s] = [%s]", key, value);
+        final Ref newBranch = gitDBRepo.writeCommit(branchRef, newTree, message, userName, userEmailAddress);
         return select(newBranch, gitDBRepo, userName, userEmailAddress);
     }
 
@@ -95,7 +97,7 @@ class GitDBBranchImpl implements GitDBBranch {
             final Ref newBranch =
                     gitDBRepo.writeCommit(
                             branchRef, newTree.get(),
-                            commitMessageForRemove(key),
+                            String.format("Remove Key [%s]", key),
                             userName,
                             userEmailAddress);
             return select(newBranch, gitDBRepo, userName, userEmailAddress);
@@ -122,21 +124,8 @@ class GitDBBranchImpl implements GitDBBranch {
     }
 
     @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
     public String getCommitId() {
         return branchRef.getObjectId().name();
-    }
-
-    private String commitMessageForAdd(final String key, final String value) {
-        return String.format("Add key [%s] = [%s]", key, value);
-    }
-
-    private String commitMessageForRemove(final String key) {
-        return String.format("Remove Key [%s]", key);
     }
 
 }

@@ -93,7 +93,7 @@ public interface GitDBBranch {
      *
      * @return the branch name
      */
-    String name();
+    String getName();
 
     /**
      * Gets the commit id for the head of the branch.
