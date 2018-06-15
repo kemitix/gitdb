@@ -172,6 +172,11 @@ class GitDBTest implements WithAssertions {
     }
 
     // Given a valid GitDb handle
+
+    private GitDB gitDB(final Path dbDir) throws IOException {
+        return GitDB.initLocal(dbDir, userName, userEmailAddress);
+    }
+
     // When select a branch that doesn't exist then an empty Optional is returned
     @Test
     void selectBranch_whenBranchNotExist_thenEmptyOptional() throws IOException {
@@ -181,10 +186,6 @@ class GitDBTest implements WithAssertions {
         final Optional<GitDBBranch> branch = gitDb.branch("unknown");
         //then
         assertThat(branch).isEmpty();
-    }
-
-    private GitDB gitDB(final Path dbDir) throws IOException {
-        return GitDB.initLocal(dbDir, userName, userEmailAddress);
     }
 
     // When select a valid branch then a GitDbBranch is returned
@@ -200,6 +201,14 @@ class GitDBTest implements WithAssertions {
     }
 
     // Given a valid GitDbBranch handle
+
+    private GitDBBranch gitDBBranch() throws IOException {
+        final GitDB gitDB = gitDB(dirDoesNotExist());
+        final Optional<GitDBBranch> branchOptional = gitDB.branch("master");
+        assumeThat(branchOptional).isNotEmpty();
+        return branchOptional.get();
+    }
+
     // When getting a key that does not exist then return an empty Optional
     @Test
     void getKey_whenKeyNotExist_thenReturnEmptyOptional() throws IOException, ClassNotFoundException {
@@ -209,13 +218,6 @@ class GitDBTest implements WithAssertions {
         final Optional<String> value = branch.get("unknown");
         //then
         assertThat(value).isEmpty();
-    }
-
-    private GitDBBranch gitDBBranch() throws IOException {
-        final GitDB gitDB = gitDB(dirDoesNotExist());
-        final Optional<GitDBBranch> branchOptional = gitDB.branch("master");
-        assumeThat(branchOptional).isNotEmpty();
-        return branchOptional.get();
     }
 
     // When getting the format version it matches expected
