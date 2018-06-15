@@ -353,6 +353,18 @@ class GitDBTest implements WithAssertions {
         assertThat(gitDB.branch("master").map(GitDBBranch::getCommitId)).contains(commitId);
     }
 
+    // When starting an anonymous transaction then transaction starts on the same commit
+    @Test
+    void startAnonymousTransaction_thenTransactionCommitMatchesOriginal() throws IOException {
+        //given
+        final GitDBBranch gitDBBranch = gitDBBranch();
+        final String commitId = gitDBBranch.getCommitId();
+        //when
+        final GitDBTransaction transaction = gitDBBranch.transaction();
+        //then
+        assertThat(transaction.getCommitId()).isEqualTo(commitId);
+    }
+
     // Given a GitDbTransaction handle (i.e. a new branch)
     // When putting a new key/value pair then the original GitDbBranch can't find it
     @Test

@@ -229,6 +229,6 @@ class GitDBRepo {
     }
 
     Ref createBranch(final Ref branchRef, final String name) throws IOException {
-        return repository.getRefDatabase().newUpdate(name, false).getRef();
+        return writeHead(branchRef.getName(), branchRef.getObjectId());
     }
 }

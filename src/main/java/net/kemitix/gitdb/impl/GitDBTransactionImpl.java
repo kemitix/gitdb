@@ -79,6 +79,6 @@ class GitDBTransactionImpl implements GitDBTransaction {
 
     @Override
     public String getCommitId() {
-        return null;
+        return branch.getCommitId();
     }
 }
