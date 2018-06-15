@@ -271,6 +271,15 @@ class GitDBTest implements WithAssertions {
     }
 
     // When removing a key that does exist then the updated GitDbBranch can't find it
+    @Test
+    void removeKey_whenExists_thenUpdatedCanNotFind() throws IOException {
+        //given
+        final GitDBBranch originalBranch = gitDBBranch().put("key-name", "value");
+        //when
+        final GitDBBranch updatedBranch = originalBranch.remove("key-name");
+        //then
+        assertThat(updatedBranch.get("key-name")).isEmpty();
+    }
 
     // When starting a named transaction then GitDbTransaction is returned
     // When starting an anonymous transaction then a GitDbTransaction is returned
