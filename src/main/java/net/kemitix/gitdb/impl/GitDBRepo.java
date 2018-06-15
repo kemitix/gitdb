@@ -227,4 +227,8 @@ class GitDBRepo {
     Optional<ObjectId> removeKey(final Ref branchRef, final String key) throws IOException {
         return keyRemover.remove(branchRef, key);
     }
+
+    Ref createBranch(final Ref branchRef, final String name) throws IOException {
+        return repository.getRefDatabase().newUpdate(name, false).getRef();
+    }
 }

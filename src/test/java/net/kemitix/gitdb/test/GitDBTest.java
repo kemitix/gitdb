@@ -3,6 +3,7 @@ package net.kemitix.gitdb.test;
 import com.github.zafarkhaja.semver.Version;
 import net.kemitix.gitdb.GitDB;
 import net.kemitix.gitdb.GitDBBranch;
+import net.kemitix.gitdb.GitDBTransaction;
 import net.kemitix.gitdb.InvalidRepositoryException;
 import org.assertj.core.api.WithAssertions;
 import org.eclipse.jgit.api.Git;
@@ -310,6 +311,20 @@ class GitDBTest implements WithAssertions {
     }
 
     // When starting a named transaction then GitDbTransaction is returned
+    @Test
+    void startTransaction_thenReturnGitDBTransaction() throws IOException {
+        //given
+        final String key = stringSupplier.get();
+        final String value = stringSupplier.get();
+        final GitDBBranch gitDBBranch = gitDBBranchWithKeyValue(key, value);
+        final String name = stringSupplier.get();
+        //when
+        final GitDBTransaction transaction = gitDBBranch.transaction(name);
+        //then
+        assertThat(transaction).isNotNull();
+        assertThat(transaction.name()).isEqualTo(name);
+    }
+
     // When starting an anonymous transaction then a GitDbTransaction is returned
 
     // Given a GitDbTransaction handle (i.e. a new branch)

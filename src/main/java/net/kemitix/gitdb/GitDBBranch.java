@@ -70,4 +70,26 @@ public interface GitDBBranch {
      * @throws IOException error reading version
      */
     Optional<Version> getFormatVersion() throws IOException;
+
+    /**
+     * Begins a new anonymous transaction.
+     *
+     * @return a new Transaction
+     */
+    GitDBTransaction transaction() throws IOException;
+
+    /**
+     * Begins a new named transaction.
+     *
+     * @param name the transaction name
+     * @return a new Transaction
+     */
+    GitDBTransaction transaction(String name) throws IOException;
+
+    /**
+     * Gets the name of the branch.
+     *
+     * @return the branch name
+     */
+    String name();
 }

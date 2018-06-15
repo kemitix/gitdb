@@ -25,12 +25,14 @@ import com.github.zafarkhaja.semver.Version;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.kemitix.gitdb.GitDBBranch;
+import net.kemitix.gitdb.GitDBTransaction;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 
 import java.io.*;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -46,6 +48,7 @@ class GitDBBranchImpl implements GitDBBranch {
     private final GitDBRepo gitDBRepo;
     private final String userName;
     private final String userEmailAddress;
+    private final String name;
 
     private static GitDBBranch select(
             final Ref branchRef,
@@ -53,7 +56,7 @@ class GitDBBranchImpl implements GitDBBranch {
             final String userName,
             final String userEmailAddress
     ) {
-        return new GitDBBranchImpl(branchRef, gitDBRepo, userName, userEmailAddress);
+        return new GitDBBranchImpl(branchRef, gitDBRepo, userName, userEmailAddress, branchRef.getName());
     }
 
     /**
@@ -104,6 +107,23 @@ class GitDBBranchImpl implements GitDBBranch {
     public Optional<Version> getFormatVersion() throws IOException {
         return gitDBRepo.readValue(branchRef, "GitDB.Version")
                 .map(Version::valueOf);
+    }
+
+    @Override
+    public GitDBTransaction transaction(String name) throws IOException {
+        final Ref ref = gitDBRepo.createBranch(branchRef, UUID.randomUUID().toString());
+        final GitDBBranch branch = new GitDBBranchImpl(ref, gitDBRepo, userName, userEmailAddress, name);
+        return new UnnamedTransaction(this, branch);
+    }
+
+    @Override
+    public GitDBTransaction transaction() throws IOException {
+        return transaction(UUID.randomUUID().toString());
+    }
+
+    @Override
+    public String name() {
+        return name;
     }
 
     private String commitMessageForAdd(final String key, final String value) {
