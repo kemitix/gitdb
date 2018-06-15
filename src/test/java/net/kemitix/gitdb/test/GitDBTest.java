@@ -394,7 +394,19 @@ class GitDBTest implements WithAssertions {
         assertThat(updatedBranch.get(key)).contains(value);
     }
 
-    // When removing a key then the original GitDbBRanch still finds it
+    // When removing a key in a transaction then the original GitDbBRanch still finds it
+    @Test
+    void removeKey_whenTransaction_thenOriginalBranchStillFinds() throws IOException {
+        //given
+        final String key = stringSupplier.get();
+        final String value = stringSupplier.get();
+        final GitDBBranch originalBranch = gitDBBranchWithKeyValue(key, value);
+        final GitDBTransaction transaction = originalBranch.transaction();
+        //when
+        final GitDBBranch removed = transaction.remove(key);
+        //then
+        assertThat(originalBranch.get(key)).contains(value);
+    }
 
     // Given a GitDbTransaction handle with a added, updated and removed keys
     // When closing the transaction an GitDbBranch is returned
