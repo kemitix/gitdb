@@ -19,8 +19,11 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package net.kemitix.gitdb;
+package net.kemitix.gitdb.impl;
 
+import net.kemitix.gitdb.GitDB;
+import net.kemitix.gitdb.GitDBBranch;
+import net.kemitix.gitdb.InvalidRepositoryException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.*;
 
@@ -34,7 +37,7 @@ import java.util.function.Function;
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
-final class LocalGitDB implements GitDB {
+final class LocalGitDBImpl implements GitDB, LocalGitDB {
 
     private static final String NOT_A_BARE_REPO = "Not a bare repo";
     private static final String ERROR_OPENING_REPOSITORY = "Error opening repository";
@@ -45,7 +48,7 @@ final class LocalGitDB implements GitDB {
 
     private final Function<Ref, GitDBBranch> branchInit;
 
-    private LocalGitDB(
+    private LocalGitDBImpl(
             final Repository repository,
             final String userName,
             final String userEmailAddress
@@ -53,7 +56,25 @@ final class LocalGitDB implements GitDB {
         this.repository = repository;
         this.userName = userName;
         this.userEmailAddress = userEmailAddress;
-        branchInit = GitDBBranch.init(this.repository, this.userName, this.userEmailAddress);
+        branchInit = GitDBBranchImpl.init(this.repository, this.userName, this.userEmailAddress);
+    }
+
+    /**
+     * Create a new GitDB instance, while initialising a new git repo.
+     *
+     * @param dbDir            the path to instantiate the git repo in
+     * @param userName         the user name
+     * @param userEmailAddress the user email address
+     * @return a GitDB instance for the created local gitdb
+     * @throws IOException if there {@code dbDir} is a file or a non-empty directory
+     */
+    static GitDB init(
+            final Path dbDir,
+            final String userName,
+            final String userEmailAddress
+    ) throws IOException {
+        InitGitDBRepo.create(dbDir);
+        return open(dbDir, userName, userEmailAddress);
     }
 
     /**
@@ -73,29 +94,11 @@ final class LocalGitDB implements GitDB {
             return Optional.of(Git.open(dbDir.toFile()))
                     .map(Git::getRepository)
                     .filter(Repository::isBare)
-                    .map(repository -> new LocalGitDB(repository, userName, userEmailAddress))
+                    .map(repository -> new LocalGitDBImpl(repository, userName, userEmailAddress))
                     .orElseThrow(() -> new InvalidRepositoryException(NOT_A_BARE_REPO, dbDir));
         } catch (IOException e) {
             throw new InvalidRepositoryException(ERROR_OPENING_REPOSITORY, dbDir, e);
         }
-    }
-
-    /**
-     * Create a new GitDB instance, while initialising a new git repo.
-     *
-     * @param dbDir            the path to instantiate the git repo in
-     * @param userName         the user name
-     * @param userEmailAddress the user email address
-     * @return a GitDB instance for the created local gitdb
-     * @throws IOException if there {@code dbDir} is a file or a non-empty directory
-     */
-    static GitDB init(
-            final Path dbDir,
-            final String userName,
-            final String userEmailAddress
-    ) throws IOException {
-        InitGitDBRepo.create(dbDir);
-        return open(dbDir, userName, userEmailAddress);
     }
 
     @Override

@@ -19,41 +19,43 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package net.kemitix.gitdb;
+package net.kemitix.gitdb.impl;
 
-import org.eclipse.jgit.lib.Constants;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.ObjectInserter;
-import org.eclipse.jgit.lib.Repository;
+import net.kemitix.gitdb.GitDB;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 /**
- * Writes Values into the Git Repository.
+ * API for connecting to a Local Git repo as a database.
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
-class ValueWriter {
-
-    private final ObjectInserter objectInserter;
+public interface LocalGitDB extends GitDB {
 
     /**
-     * Create new instance of this class.
+     * Create a new GitDB instance, while initialising a new git repo.
      *
-     * @param repository the repository to write values to
+     * @param dbDir            the path to instantiate the git repo in
+     * @param userName         the user name
+     * @param userEmailAddress the user email address
+     * @return a GitDB instance for the created local gitdb
+     * @throws IOException if there {@code dbDir} is a file or a non-empty directory
      */
-    ValueWriter(final Repository repository) {
-        objectInserter = repository.getObjectDatabase().newInserter();
+    static GitDB init(final Path dbDir, final String userName, final String userEmailAddress) throws IOException {
+        return LocalGitDBImpl.init(dbDir, userName, userEmailAddress);
     }
 
     /**
-     * Write a value into the repository.
+     * Create a new GitDB instance using the Git repo.
      *
-     * @param blob the value blob
-     * @return the id of the value object
-     * @throws IOException if there is an error writing the value
+     * @param dbDir            the path to instantiate the git repo in
+     * @param userName         the user name
+     * @param userEmailAddress the user email address
+     * @return a GitDB instance for the created local gitdb
      */
-    ObjectId write(final byte[] blob) throws IOException {
-        return objectInserter.insert(Constants.OBJ_BLOB, blob);
+    static GitDB open(final Path dbDir, final String userName, final String userEmailAddress) {
+        return LocalGitDBImpl.open(dbDir, userName, userEmailAddress);
     }
+
 }

@@ -19,7 +19,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package net.kemitix.gitdb;
+package net.kemitix.gitdb.impl;
 
 import lombok.val;
 import org.eclipse.jgit.lib.*;

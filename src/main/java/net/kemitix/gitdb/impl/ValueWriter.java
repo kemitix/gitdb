@@ -19,42 +19,41 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package net.kemitix.gitdb;
+package net.kemitix.gitdb.impl;
+
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectInserter;
+import org.eclipse.jgit.lib.Repository;
 
 import java.io.IOException;
-import java.util.Optional;
 
 /**
- * API for interacting with a branch in a GirDB.
+ * Writes Values into the Git Repository.
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
-public interface GitDBBranch {
+class ValueWriter {
+
+    private final ObjectInserter objectInserter;
 
     /**
-     * Lookup a value for the key.
+     * Create new instance of this class.
      *
-     * @param key the key to lookup
-     * @return an Optional containing the value, if it exists, or empty if not
-     * @throws IOException if there was an error reading the value
+     * @param repository the repository to write values to
      */
-    Optional<String> get(String key) throws IOException;
+    ValueWriter(final Repository repository) {
+        objectInserter = repository.getObjectDatabase().newInserter();
+    }
 
     /**
-     * Put a value into the store for the key.
+     * Write a value into the repository.
      *
-     * @param key   the key to place the value under
-     * @param value the value (must be Serializable)
-     * @return an updated branch containing the new key/value
-     * @throws IOException if there was an error writing the value
+     * @param blob the value blob
+     * @return the id of the value object
+     * @throws IOException if there is an error writing the value
      */
-    GitDBBranch put(String key, String value) throws IOException;
-
-    /**
-     * Removes a key and its value from the store.
-     *
-     * @param key the key to remove
-     * @return an updated branch without the key, or the original if the key was not found
-     */
-    GitDBBranch remove(String key);
+    ObjectId write(final byte[] blob) throws IOException {
+        return objectInserter.insert(Constants.OBJ_BLOB, blob);
+    }
 }

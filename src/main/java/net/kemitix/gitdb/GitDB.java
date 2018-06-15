@@ -21,6 +21,8 @@
 
 package net.kemitix.gitdb;
 
+import net.kemitix.gitdb.impl.LocalGitDB;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -59,8 +61,6 @@ public interface GitDB {
      */
     static GitDB openLocal(final Path dbDir, final String userName, final String userEmailAddress) {
         return LocalGitDB.open(dbDir, userName, userEmailAddress);
-
-
     }
 
     /**

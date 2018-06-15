@@ -19,42 +19,8 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package net.kemitix.gitdb;
-
-import java.io.IOException;
-import java.util.Optional;
-
 /**
- * API for interacting with a branch in a GirDB.
- *
- * @author Paul Campbell (pcampbell@kemitix.net)
+ * GitDB - using git as a key/value database.
  */
-public interface GitDBBranch {
 
-    /**
-     * Lookup a value for the key.
-     *
-     * @param key the key to lookup
-     * @return an Optional containing the value, if it exists, or empty if not
-     * @throws IOException if there was an error reading the value
-     */
-    Optional<String> get(String key) throws IOException;
-
-    /**
-     * Put a value into the store for the key.
-     *
-     * @param key   the key to place the value under
-     * @param value the value (must be Serializable)
-     * @return an updated branch containing the new key/value
-     * @throws IOException if there was an error writing the value
-     */
-    GitDBBranch put(String key, String value) throws IOException;
-
-    /**
-     * Removes a key and its value from the store.
-     *
-     * @param key the key to remove
-     * @return an updated branch without the key, or the original if the key was not found
-     */
-    GitDBBranch remove(String key);
-}
+package net.kemitix.gitdb.impl;
