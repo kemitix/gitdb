@@ -57,17 +57,6 @@ class GitDBRepo {
     }
 
     /**
-     * Insert a blob into the store, returning its unique id.
-     *
-     * @param blob content of the blob
-     * @return the id of the blob
-     * @throws IOException the blob could not be stored
-     */
-    ObjectId insertBlob(final byte[] blob) throws IOException {
-        return valueWriter.write(blob);
-    }
-
-    /**
      * Insert a new, empty tree into the store, returning its unique id.
      *
      * @param key     the key to insert
@@ -80,23 +69,6 @@ class GitDBRepo {
             final ObjectId valueId
     ) throws IOException {
         return keyWriter.writeFirst(key, valueId);
-    }
-
-    /**
-     * Insert a tree into the store, copying the exiting tree from the branch, returning its new unique id.
-     *
-     * @param branchRef the branch to copy the tree from
-     * @param key       the key to insert
-     * @param valueId   id of the value
-     * @return the id of the inserted tree
-     * @throws IOException the tree could not be stored
-     */
-    ObjectId insertTree(
-            final Ref branchRef,
-            final String key,
-            final ObjectId valueId
-    ) throws IOException {
-        return keyWriter.write(key, valueId, branchRef);
     }
 
     /**
@@ -154,8 +126,8 @@ class GitDBRepo {
      * @throws IOException if there was an error writing the value
      */
     ObjectId writeValue(final Ref branchRef, final String key, final String value) throws IOException {
-        final ObjectId blob = insertBlob(value.getBytes(StandardCharsets.UTF_8));
-        return insertTree(branchRef, key, blob);
+        final ObjectId blob = valueWriter.write(value.getBytes(StandardCharsets.UTF_8));
+        return keyWriter.write(key, blob, branchRef);
     }
 
     /**
