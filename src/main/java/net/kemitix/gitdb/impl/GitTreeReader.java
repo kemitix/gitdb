@@ -22,12 +22,9 @@
 package net.kemitix.gitdb.impl;
 
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.revwalk.RevBlob;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
@@ -66,7 +63,8 @@ class GitTreeReader {
         while (treeWalk.next()) {
             builder.add(new NamedRevBlob(
                     treeWalk.getNameString(),
-                    new RevWalk(repository).lookupBlob(treeWalk.getObjectId(0))));
+                    new RevWalk(repository).lookupBlob(treeWalk.getObjectId(0)),
+                    repository));
         }
         return builder.build();
     }
@@ -80,28 +78,6 @@ class GitTreeReader {
     GitTreeReader treeFilter(final String path) {
         this.treeFilter = PathFilter.create(path);
         return this;
-    }
-
-    /**
-     * Represents the key/value pairs read from the tree.
-     */
-    @Getter(AccessLevel.PACKAGE)
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    protected class NamedRevBlob {
-
-        private final String name;
-        private final RevBlob revBlob;
-
-        /**
-         * Converts the blob to a String.
-         *
-         * @return a string
-         * @throws IOException of there was an error reading the blob
-         */
-        String blobAsString() throws IOException {
-            return new String(repository.open(revBlob.getId(), Constants.OBJ_BLOB).getBytes());
-        }
-
     }
 
 }

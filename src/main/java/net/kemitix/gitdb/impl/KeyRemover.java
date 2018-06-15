@@ -50,7 +50,7 @@ class KeyRemover {
      * @param removed the boolean to update
      * @return a Consumer
      */
-    private static Consumer<GitTreeReader.NamedRevBlob> flagIfFound(final String key, final AtomicBoolean removed) {
+    private static Consumer<NamedRevBlob> flagIfFound(final String key, final AtomicBoolean removed) {
         return nvb -> {
             if (nvb.getName().equals(key)) {
                 removed.set(true);
@@ -64,7 +64,7 @@ class KeyRemover {
      * @param key the key to match
      * @return a Predicate
      */
-    private static Predicate<GitTreeReader.NamedRevBlob> isNotKey(final String key) {
+    private static Predicate<NamedRevBlob> isNotKey(final String key) {
         return item -> !item.getName().equals(key);
     }
 
@@ -74,7 +74,7 @@ class KeyRemover {
      * @param treeFormatter the tree formatter to add to
      * @return a Consumer
      */
-    private static Consumer<GitTreeReader.NamedRevBlob> addToTree(final TreeFormatter treeFormatter) {
+    private static Consumer<NamedRevBlob> addToTree(final TreeFormatter treeFormatter) {
         return item -> treeFormatter.append(item.getName(), item.getRevBlob());
     }
 
