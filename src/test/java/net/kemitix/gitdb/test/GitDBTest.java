@@ -1,5 +1,6 @@
 package net.kemitix.gitdb.test;
 
+import com.github.zafarkhaja.semver.Version;
 import net.kemitix.gitdb.GitDB;
 import net.kemitix.gitdb.GitDBBranch;
 import net.kemitix.gitdb.InvalidRepositoryException;
@@ -211,6 +212,18 @@ class GitDBTest implements WithAssertions {
         final Optional<GitDBBranch> branchOptional = gitDB.branch("master");
         assumeThat(branchOptional).isNotEmpty();
         return branchOptional.get();
+    }
+
+    // When getting the format version it matches expected
+    @Test
+    void getVersionFormat_thenFormatIsSet() throws IOException {
+        //given
+        final GitDBBranch gitDBBranch = gitDBBranch();
+        //when
+        final Optional<Version> formatVersion = gitDBBranch.getFormatVersion();
+        //then
+        assertThat(formatVersion).contains(GitDB.VERSION);
+        assertThat(formatVersion.get()).isNotSameAs(GitDB.VERSION);
     }
 
     // When putting a key/value pair then a GitDbBranch is returned

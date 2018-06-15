@@ -21,6 +21,7 @@
 
 package net.kemitix.gitdb.impl;
 
+import net.kemitix.gitdb.GitDB;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.RepositoryCache;
@@ -45,7 +46,7 @@ class InitGitDBRepo {
     private static final String INIT_USER = "GitDB";
     private static final String INIT_EMAIL = "pcampbell@kemitix.net";
     private static final String MASTER = "master";
-    private static final String IS_GIT_DB = "isGitDB";
+    private static final String GIT_DB_VERSION = "GitDB.Version";
     private static final String REFS_HEADS_FORMAT = "refs/heads/%s";
 
     /**
@@ -65,8 +66,9 @@ class InitGitDBRepo {
 
     private void createInitialBranchOnMaster(final Repository repository) throws IOException {
         final GitDBRepo repo = new GitDBRepo(repository);
-        final ObjectId objectId = repo.insertBlob(new byte[0]);
-        final ObjectId treeId = repo.insertNewTree(IS_GIT_DB, objectId);
+        final ObjectId objectId =
+                repo.insertBlob(GitDB.VERSION.toString().getBytes(StandardCharsets.UTF_8));
+        final ObjectId treeId = repo.insertNewTree(GIT_DB_VERSION, objectId);
         final ObjectId commitId = repo.initialCommit(treeId, INIT_MESSAGE, INIT_USER, INIT_EMAIL);
         createBranch(repository, commitId, MASTER);
     }

@@ -21,6 +21,7 @@
 
 package net.kemitix.gitdb;
 
+import com.github.zafarkhaja.semver.Version;
 import net.kemitix.gitdb.impl.LocalGitDB;
 
 import java.io.IOException;
@@ -33,6 +34,12 @@ import java.util.Optional;
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
 public interface GitDB {
+
+    int MAJOR = 1;
+    int MINOR = 0;
+    int PATCH = 0;
+
+    Version VERSION = Version.forIntegers(MAJOR, MINOR, PATCH);
 
     /**
      * Initialise a new local gitdb.
@@ -71,4 +78,5 @@ public interface GitDB {
      * @throws IOException if there is an error accessing the branch name
      */
     Optional<GitDBBranch> branch(String name) throws IOException;
+
 }

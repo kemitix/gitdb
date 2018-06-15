@@ -21,6 +21,8 @@
 
 package net.kemitix.gitdb;
 
+import com.github.zafarkhaja.semver.Version;
+
 import java.io.IOException;
 import java.util.Optional;
 
@@ -58,4 +60,14 @@ public interface GitDBBranch {
      * @throws IOException if there was an error removing the key/value
      */
     GitDBBranch remove(String key) throws IOException;
+
+    /**
+     * Returns the GitDB format for the current branch.
+     *
+     * <p>Different branches can have different versions.</p>
+     *
+     * @return the format as per semantic versioning, i.e. "x.y.z" within an Optional
+     * @throws IOException error reading version
+     */
+    Optional<Version> getFormatVersion() throws IOException;
 }

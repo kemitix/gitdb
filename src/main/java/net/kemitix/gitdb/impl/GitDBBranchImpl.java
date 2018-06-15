@@ -21,6 +21,7 @@
 
 package net.kemitix.gitdb.impl;
 
+import com.github.zafarkhaja.semver.Version;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.kemitix.gitdb.GitDBBranch;
@@ -97,6 +98,12 @@ class GitDBBranchImpl implements GitDBBranch {
             return select(newBranch, gitDBRepo, userName, userEmailAddress);
         }
         return this;
+    }
+
+    @Override
+    public Optional<Version> getFormatVersion() throws IOException {
+        return gitDBRepo.readValue(branchRef, "GitDB.Version")
+                .map(Version::valueOf);
     }
 
     private String commitMessageForAdd(final String key, final String value) {
