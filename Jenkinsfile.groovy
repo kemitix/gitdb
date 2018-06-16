@@ -1,37 +1,31 @@
 final String mvn = "mvn --batch-mode --update-snapshots --errors"
-final dependenciesSupportJDK=9
+final dependenciesSupportJDK = 9
 
 pipeline {
     agent any
     stages {
-        stage('master != SNAPSHOT') {
-            // checks that the pom version is not a snapshot when the current or target branch is master
+        stage('release != SNAPSHOT') {
+            // checks that the pom version is not a snapshot when the current or target branch is a release
             when {
                 expression {
-                    (env.GIT_BRANCH == 'master' || env.CHANGE_TARGET == 'master') &&
+                    (startsWith(env.GIT_BRANCH, 'release') || startsWith(env.CHANGE_TARGET, 'release')) &&
                             (readMavenPom(file: 'pom.xml').version).contains("SNAPSHOT")
                 }
             }
             steps {
-                error("Build failed because SNAPSHOT version")
+                error("Build failed because SNAPSHOT version: [" + env.GIT_BRANCH + "][" + env.CHANGE_TARGET + "]")
             }
         }
         stage('Build & Test') {
             steps {
                 withMaven(maven: 'maven', jdk: 'JDK LTS') {
                     sh "${mvn} clean compile checkstyle:checkstyle pmd:pmd test"
-                    //junit '**/target/surefire-reports/*.xml'
-                    //sh "${mvn} jacoco:report com.gavinmogan:codacy-maven-plugin:coverage " +
-                    //        "-DcoverageReportFile=target/site/jacoco/jacoco.xml " +
-                    //        "-DprojectToken=`$JENKINS_HOME/codacy/token` " +
-                    //        "-DapiToken=`$JENKINS_HOME/codacy/apitoken` " +
-                    //        "-Dcommit=`git rev-parse HEAD`"
                     jacoco exclusionPattern: '**/*{Test|IT|Main|Application|Immutable}.class'
                     pmd canComputeNew: false, defaultEncoding: '', healthy: '', pattern: '', unHealthy: ''
-                    step([$class: 'hudson.plugins.checkstyle.CheckStylePublisher',
-                          pattern: '**/target/checkstyle-result.xml',
-                          healthy:'20',
-                          unHealthy:'100'])
+                    step([$class   : 'hudson.plugins.checkstyle.CheckStylePublisher',
+                          pattern  : '**/target/checkstyle-result.xml',
+                          healthy  : '20',
+                          unHealthy: '100'])
                 }
             }
         }
@@ -52,14 +46,12 @@ pipeline {
                 }
             }
         }
-        stage('Archiving') {
-            when { expression { findFiles(glob: '**/target/*.jar').length > 0 } }
-            steps {
-                archiveArtifacts '**/target/*.jar'
+        stage('Deploy (release on gitlab)') {
+            when {
+                expression {
+                    (env.GIT_BRANCH.startsWith('master') && env.GIT_URL.startsWith('https://gitlab.com'))
+                }
             }
-        }
-        stage('Deploy (master on gitlab)') {
-            when { expression { (env.GIT_BRANCH == 'master' && env.GIT_URL.startsWith('https://gitlab.com')) } }
             steps {
                 withMaven(maven: 'maven', jdk: 'JDK LTS') {
                     sh "${mvn} deploy --activate-profiles release -DskipTests=true"
@@ -83,4 +75,8 @@ pipeline {
             }
         }
     }
+}
+
+private boolean startsWith(String envSetting, String match) {
+    envSetting != null && envSetting.startsWith(match)
 }
