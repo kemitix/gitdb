@@ -71,34 +71,4 @@ public interface GitDBBranch {
      */
     Optional<Version> getFormatVersion() throws IOException;
 
-    /**
-     * Begins a new anonymous transaction.
-     *
-     * @return a new Transaction
-     * @throws IOException error writing transaction branch
-     */
-    GitDBTransaction transaction() throws IOException;
-
-    /**
-     * Begins a new named transaction.
-     *
-     * @param transactionName the transaction name
-     * @return a new Transaction
-     * @throws IOException error writing transaction branch
-     */
-    GitDBTransaction transaction(String transactionName) throws IOException;
-
-    /**
-     * Gets the name of the branch.
-     *
-     * @return the branch name
-     */
-    String getName();
-
-    /**
-     * Gets the commit id for the head of the branch.
-     *
-     * @return an Object Id.
-     */
-    String getCommitId();
 }

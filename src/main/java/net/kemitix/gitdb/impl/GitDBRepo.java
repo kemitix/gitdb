@@ -22,11 +22,13 @@
 package net.kemitix.gitdb.impl;
 
 import lombok.val;
-import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Optional;
 
 /**
  * Wrapper for interacting with the GitDB Repository.
@@ -45,7 +47,7 @@ class GitDBRepo {
     /**
      * Creates a new instance of this class.
      *
-     * @param repository the Git Repository
+     * @param repository       the Git Repository
      */
     GitDBRepo(final Repository repository) {
         this.repository = repository;
@@ -186,15 +188,4 @@ class GitDBRepo {
         return keyRemover.remove(branchRef, key);
     }
 
-    /**
-     * Create a new branch.
-     *
-     * @param branchRef the branch source
-     * @param name the name of the new branch
-     * @return the Ref of the new branch
-     * @throws IOException error writing the branch
-     */
-    Ref createBranch(final Ref branchRef, final String name) throws IOException {
-        return headWriter.write(branchRef.getName(), branchRef.getObjectId());
-    }
 }

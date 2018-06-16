@@ -46,8 +46,8 @@ class CommitWriter {
     /**
      * Write a commit into the repository.
      *
-     * @param treeId the tree to commit
-     * @param parentId the id of the parent commit
+     * @param treeId           the tree to commit
+     * @param parentId         the id of the parent commit
      * @param message          the message
      * @param userName         the user name
      * @param userEmailAddress the user email address
@@ -76,8 +76,8 @@ class CommitWriter {
      *
      * <p>N.B. While this adds the commit to a branch, it doesn't update the branch itself.</p>
      *
-     * @param treeId the tree to commit
-     * @param branchRef the branch to add the commit to
+     * @param treeId           the tree to commit
+     * @param branchRef        the branch to add the commit to
      * @param message          the message
      * @param userName         the user name
      * @param userEmailAddress the user email address
