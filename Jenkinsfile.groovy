@@ -39,7 +39,7 @@ pipeline {
         stage('SonarQube (gitlab only)') {
             when { expression { env.GIT_URL.startsWith('https://gitlab.com') } }
             steps {
-                withSonarQubeEnv('sonarqube') {
+                withSonarQubeEnv('sonarqube-gitlab') {
                     withMaven(maven: 'maven', jdk: 'JDK LTS') {
                         sh "${mvn} org.sonarsource.scanner.maven:sonar-maven-plugin:3.4.0.905:sonar"
                     }
