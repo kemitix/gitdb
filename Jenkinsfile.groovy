@@ -5,15 +5,15 @@ pipeline {
     agent any
     stages {
         stage('release != SNAPSHOT') {
-            // checks that the pom version is not a snapshot when the current or target branch is a release
+            // checks that the pom version is not a SNAPSHOT when the current branch is a release
             when {
                 expression {
-                    (startsWith(env.GIT_BRANCH, 'release') || startsWith(env.CHANGE_TARGET, 'release')) &&
+                    (branchStartsWith('release/')) &&
                             (readMavenPom(file: 'pom.xml').version).contains("SNAPSHOT")
                 }
             }
             steps {
-                error("Build failed because SNAPSHOT version: [" + env.GIT_BRANCH + "][" + env.CHANGE_TARGET + "]")
+                error("Build failed because SNAPSHOT version: [" + env.GIT_BRANCH + "]")
             }
         }
         stage('Build & Test') {
@@ -37,7 +37,7 @@ pipeline {
             }
         }
         stage('SonarQube (gitlab only)') {
-            when { expression { env.GIT_URL.startsWith('https://gitlab.com') } }
+            when { expression { isPublished() } }
             steps {
                 withSonarQubeEnv('sonarqube') {
                     withMaven(maven: 'maven', jdk: 'JDK LTS') {
@@ -49,7 +49,7 @@ pipeline {
         stage('Deploy (release on gitlab)') {
             when {
                 expression {
-                    (env.GIT_BRANCH.startsWith('master') && env.GIT_URL.startsWith('https://gitlab.com'))
+                    (branchStartsWith('release/') && isPublished())
                 }
             }
             steps {
@@ -77,6 +77,14 @@ pipeline {
     }
 }
 
-private boolean startsWith(String envSetting, String match) {
-    envSetting != null && envSetting.startsWith(match)
+private boolean branchStartsWith(String branchName) {
+    startsWith(env.GIT_BRANCH, branchName)
+}
+
+private boolean isPublished() {
+    startsWith(env.GIT_URL, 'https://')
+}
+
+private boolean startsWith(String value, String match) {
+    value != null && value.startsWith(match)
 }
