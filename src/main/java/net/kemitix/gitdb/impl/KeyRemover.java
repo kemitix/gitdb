@@ -22,10 +22,7 @@
 package net.kemitix.gitdb.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.lib.TreeFormatter;
+import org.eclipse.jgit.lib.*;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -108,6 +105,8 @@ class KeyRemover {
      * @throws IOException the object could not be stored.
      */
     private ObjectId insertTree(final TreeFormatter treeFormatter) throws IOException {
-        return repository.getObjectDatabase().newInserter().insert(treeFormatter);
+        try (final ObjectInserter inserter = repository.getObjectDatabase().newInserter()) {
+            return inserter.insert(treeFormatter);
+        }
     }
 }

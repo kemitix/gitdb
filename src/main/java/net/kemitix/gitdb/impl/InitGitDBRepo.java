@@ -30,10 +30,7 @@ import org.eclipse.jgit.util.FS;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryNotEmptyException;
-import java.nio.file.Files;
-import java.nio.file.NotDirectoryException;
-import java.nio.file.Path;
+import java.nio.file.*;
 
 /**
  * Initialise a new GitDB Repo.
@@ -59,9 +56,10 @@ class InitGitDBRepo {
         final InitGitDBRepo initRepo = new InitGitDBRepo();
         final File validDbDir = initRepo.validDbDir(dbDir.toFile());
         validDbDir.mkdirs();
-        final Repository repository = RepositoryCache.FileKey.exact(validDbDir, FS.DETECTED).open(false);
-        repository.create(true);
-        initRepo.createInitialBranchOnMaster(repository);
+        try (final Repository repository = RepositoryCache.FileKey.exact(validDbDir, FS.DETECTED).open(false)) {
+            repository.create(true);
+            initRepo.createInitialBranchOnMaster(repository);
+        }
     }
 
     private void createInitialBranchOnMaster(final Repository repository) throws IOException {
@@ -102,8 +100,10 @@ class InitGitDBRepo {
     }
 
     private void verifyIsEmpty(final File dbDir) throws IOException {
-        if (Files.newDirectoryStream(dbDir.toPath()).iterator().hasNext()) {
-            throw new DirectoryNotEmptyException(dbDir.toString());
+        try (final DirectoryStream<Path> directoryStream = Files.newDirectoryStream(dbDir.toPath())) {
+            if (directoryStream.iterator().hasNext()) {
+                throw new DirectoryNotEmptyException(dbDir.toString());
+            }
         }
     }
 
