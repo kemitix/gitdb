@@ -32,9 +32,9 @@ import java.nio.charset.StandardCharsets;
  */
 public final class FormatVersion {
 
-    private final int major = 1;
-    private final int minor = 0;
-    private final int patch = 0;
+    private static final int MAJOR = 1;
+    private static final int MINOR = 0;
+    private static final int PATCH = 0;
 
     /**
      * Formats the version as a UTF 8 byte array.
@@ -46,6 +46,6 @@ public final class FormatVersion {
     }
 
     public Version getVersion() {
-        return Version.forIntegers(major, minor, patch);
+        return Version.forIntegers(MAJOR, MINOR, PATCH);
     }
 }
