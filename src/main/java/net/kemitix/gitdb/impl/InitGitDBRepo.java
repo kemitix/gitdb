@@ -21,7 +21,7 @@
 
 package net.kemitix.gitdb.impl;
 
-import net.kemitix.gitdb.GitDB;
+import net.kemitix.gitdb.FormatVersion;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.RepositoryCache;
@@ -65,7 +65,7 @@ class InitGitDBRepo {
     private void createInitialBranchOnMaster(final Repository repository) throws IOException {
         final GitDBRepo repo = new GitDBRepo(repository);
         final ValueWriter valueWriter = new ValueWriter(repository);
-        final ObjectId objectId = valueWriter.write(GitDB.VERSION.toString().getBytes(StandardCharsets.UTF_8));
+        final ObjectId objectId = valueWriter.write(new FormatVersion().toBytes());
         final ObjectId treeId = repo.insertNewTree(GIT_DB_VERSION, objectId);
         final ObjectId commitId = repo.initialCommit(treeId, INIT_MESSAGE, INIT_USER, INIT_EMAIL);
         createBranch(repository, commitId, MASTER);

@@ -1,6 +1,7 @@
 package net.kemitix.gitdb.test;
 
 import com.github.zafarkhaja.semver.Version;
+import net.kemitix.gitdb.FormatVersion;
 import net.kemitix.gitdb.GitDB;
 import net.kemitix.gitdb.GitDBBranch;
 import net.kemitix.gitdb.InvalidRepositoryException;
@@ -8,7 +9,6 @@ import org.assertj.core.api.WithAssertions;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Constants;
-import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -244,8 +244,9 @@ class GitDBTest implements WithAssertions {
         //when
         final Optional<Version> formatVersion = gitDBBranch.getFormatVersion();
         //then
-        assertThat(formatVersion).contains(GitDB.VERSION);
-        assertThat(formatVersion.get()).isNotSameAs(GitDB.VERSION);
+        final Version version = new FormatVersion().getVersion();
+        assertThat(formatVersion).contains(version);
+        assertThat(formatVersion.get()).isNotSameAs(version);
     }
 
     // When putting a key/value pair then a GitDbBranch is returned
