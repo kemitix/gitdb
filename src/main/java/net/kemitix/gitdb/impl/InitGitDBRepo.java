@@ -56,7 +56,7 @@ class InitGitDBRepo {
         final InitGitDBRepo initRepo = new InitGitDBRepo();
         final File validDbDir = initRepo.validDbDir(dbDir.toFile());
         validDbDir.mkdirs();
-        try (final Repository repository = RepositoryCache.FileKey.exact(validDbDir, FS.DETECTED).open(false)) {
+        try (Repository repository = RepositoryCache.FileKey.exact(validDbDir, FS.DETECTED).open(false)) {
             repository.create(true);
             initRepo.createInitialBranchOnMaster(repository);
         }
@@ -100,7 +100,7 @@ class InitGitDBRepo {
     }
 
     private void verifyIsEmpty(final File dbDir) throws IOException {
-        try (final DirectoryStream<Path> directoryStream = Files.newDirectoryStream(dbDir.toPath())) {
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(dbDir.toPath())) {
             if (directoryStream.iterator().hasNext()) {
                 throw new DirectoryNotEmptyException(dbDir.toString());
             }

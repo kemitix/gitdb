@@ -105,7 +105,7 @@ class KeyRemover {
      * @throws IOException the object could not be stored.
      */
     private ObjectId insertTree(final TreeFormatter treeFormatter) throws IOException {
-        try (final ObjectInserter inserter = repository.getObjectDatabase().newInserter()) {
+        try (ObjectInserter inserter = repository.getObjectDatabase().newInserter()) {
             return inserter.insert(treeFormatter);
         }
     }
