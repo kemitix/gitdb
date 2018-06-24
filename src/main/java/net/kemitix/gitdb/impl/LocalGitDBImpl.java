@@ -24,12 +24,14 @@ package net.kemitix.gitdb.impl;
 import net.kemitix.gitdb.GitDB;
 import net.kemitix.gitdb.GitDBBranch;
 import net.kemitix.gitdb.InvalidRepositoryException;
+import net.kemitix.mon.maybe.Maybe;
+import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -43,8 +45,6 @@ final class LocalGitDBImpl implements GitDB, LocalGitDB {
     private static final String ERROR_OPENING_REPOSITORY = "Error opening repository";
 
     private final Repository repository;
-    private final String userName;
-    private final String userEmailAddress;
 
     private final Function<Ref, GitDBBranch> branchInit;
 
@@ -54,9 +54,7 @@ final class LocalGitDBImpl implements GitDB, LocalGitDB {
             final String userEmailAddress
     ) {
         this.repository = repository;
-        this.userName = userName;
-        this.userEmailAddress = userEmailAddress;
-        branchInit = GitDBBranchImpl.init(this.repository, this.userName, this.userEmailAddress);
+        branchInit = GitDBBranchImpl.init(this.repository, userName, userEmailAddress);
     }
 
     /**
@@ -66,15 +64,14 @@ final class LocalGitDBImpl implements GitDB, LocalGitDB {
      * @param userName         the user name
      * @param userEmailAddress the user email address
      * @return a GitDB instance for the created local gitdb
-     * @throws IOException if there {@code dbDir} is a file or a non-empty directory
      */
-    static GitDB init(
+    static Result<GitDB> init(
             final Path dbDir,
             final String userName,
             final String userEmailAddress
-    ) throws IOException {
-        InitGitDBRepo.create(dbDir);
-        return open(dbDir, userName, userEmailAddress);
+    ) {
+        return InitGitDBRepo.create(dbDir)
+                .flatMap(c -> open(dbDir, userName, userEmailAddress));
     }
 
     /**
@@ -85,25 +82,41 @@ final class LocalGitDBImpl implements GitDB, LocalGitDB {
      * @param userEmailAddress the user email address
      * @return a GitDB instance for the created local gitdb
      */
-    static GitDB open(
+    static Result<GitDB> open(
             final Path dbDir,
             final String userName,
             final String userEmailAddress
     ) {
+        return gitOpen(dbDir)
+                .map(Git::getRepository)
+                .maybe(Repository::isBare)
+                .flatMap(asErrorIfNotBare(dbDir))
+                .map(toLocalGitDB(userName, userEmailAddress));
+    }
+
+    private static Result<Git> gitOpen(Path dbDir) {
         try {
-            return Optional.of(Git.open(dbDir.toFile()))
-                    .map(Git::getRepository)
-                    .filter(Repository::isBare)
-                    .map(repository -> new LocalGitDBImpl(repository, userName, userEmailAddress))
-                    .orElseThrow(() -> new InvalidRepositoryException(NOT_A_BARE_REPO, dbDir));
+            return Result.ok(Git.open(dbDir.toFile()));
         } catch (IOException e) {
-            throw new InvalidRepositoryException(ERROR_OPENING_REPOSITORY, dbDir, e);
+            return Result.error(new InvalidRepositoryException(ERROR_OPENING_REPOSITORY, dbDir, e));
         }
     }
 
+    private static Function<Maybe<Repository>, Result<Repository>> asErrorIfNotBare(final Path dbDir) {
+        return maybe -> Result.fromMaybe(maybe, () -> new InvalidRepositoryException(NOT_A_BARE_REPO, dbDir));
+    }
+
+    private static Function<Repository, GitDB> toLocalGitDB(final String userName, final String userEmailAddress) {
+        return repository -> new LocalGitDBImpl(repository, userName, userEmailAddress);
+    }
+
     @Override
-    public Optional<GitDBBranch> branch(final String name) throws IOException {
-        return Optional.ofNullable(repository.findRef(name)).map(branchInit);
+    public Result<Maybe<GitDBBranch>> branch(final String name) {
+        try {
+            return Result.ok(Maybe.maybe(repository.findRef(name)).map(branchInit));
+        } catch (IOException e) {
+            return Result.error(e);
+        }
     }
 
 }

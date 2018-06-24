@@ -22,6 +22,7 @@
 package net.kemitix.gitdb.impl;
 
 import net.kemitix.gitdb.FormatVersion;
+import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.RepositoryCache;
@@ -52,14 +53,30 @@ class InitGitDBRepo {
      * @param dbDir the directory to initialise the repo in
      * @throws IOException if there is an error in creating the repo files
      */
-    static void create(final Path dbDir) throws IOException {
+    static Result<Void> create(final Path dbDir) {
         final InitGitDBRepo initRepo = new InitGitDBRepo();
-        final File validDbDir = initRepo.validDbDir(dbDir.toFile());
+        final File validDbDir;
+        try {
+            validDbDir = initRepo.validDbDir(dbDir.toFile());
+        } catch (IOException e) {
+            return Result.error(e);
+        }
         validDbDir.mkdirs();
         try (Repository repository = RepositoryCache.FileKey.exact(validDbDir, FS.DETECTED).open(false)) {
             repository.create(true);
             initRepo.createInitialBranchOnMaster(repository);
+        } catch (IOException e) {
+            return Result.error(e);
         }
+        return Result.ok(null);
+    }
+
+    private File validDbDir(final File dbDir) throws IOException {
+        verifyIsNotAFile(dbDir);
+        if (dbDir.exists()) {
+            verifyIsEmpty(dbDir);
+        }
+        return dbDir;
     }
 
     private void createInitialBranchOnMaster(final Repository repository) throws IOException {
@@ -69,6 +86,20 @@ class InitGitDBRepo {
         final ObjectId treeId = repo.insertNewTree(GIT_DB_VERSION, objectId);
         final ObjectId commitId = repo.initialCommit(treeId, INIT_MESSAGE, INIT_USER, INIT_EMAIL);
         createBranch(repository, commitId, MASTER);
+    }
+
+    private void verifyIsNotAFile(final File dbDir) throws NotDirectoryException {
+        if (dbDir.isFile()) {
+            throw new NotDirectoryException(dbDir.toString());
+        }
+    }
+
+    private void verifyIsEmpty(final File dbDir) throws IOException {
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(dbDir.toPath())) {
+            if (directoryStream.iterator().hasNext()) {
+                throw new DirectoryNotEmptyException(dbDir.toString());
+            }
+        }
     }
 
     private void createBranch(
@@ -89,27 +120,5 @@ class InitGitDBRepo {
                 .toPath()
                 .resolve(String.format(REFS_HEADS_FORMAT, branchName))
                 .toAbsolutePath();
-    }
-
-    private File validDbDir(final File dbDir) throws IOException {
-        verifyIsNotAFile(dbDir);
-        if (dbDir.exists()) {
-            verifyIsEmpty(dbDir);
-        }
-        return dbDir;
-    }
-
-    private void verifyIsEmpty(final File dbDir) throws IOException {
-        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(dbDir.toPath())) {
-            if (directoryStream.iterator().hasNext()) {
-                throw new DirectoryNotEmptyException(dbDir.toString());
-            }
-        }
-    }
-
-    private void verifyIsNotAFile(final File dbDir) throws NotDirectoryException {
-        if (dbDir.isFile()) {
-            throw new NotDirectoryException(dbDir.toString());
-        }
     }
 }

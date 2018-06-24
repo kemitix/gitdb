@@ -5,6 +5,8 @@ import net.kemitix.gitdb.FormatVersion;
 import net.kemitix.gitdb.GitDB;
 import net.kemitix.gitdb.GitDBBranch;
 import net.kemitix.gitdb.InvalidRepositoryException;
+import net.kemitix.mon.maybe.Maybe;
+import net.kemitix.mon.result.Result;
 import org.assertj.core.api.WithAssertions;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -25,8 +27,6 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
-
-import static org.assertj.core.api.Assumptions.assumeThat;
 
 @ExtendWith(MockitoExtension.class)
 class GitDBTest implements WithAssertions {
@@ -51,10 +51,16 @@ class GitDBTest implements WithAssertions {
         //given
         final Path dir = dirDoesNotExist();
         //when
-        final GitDB gitDB = GitDB.initLocal(dir, userName, userEmailAddress);
+        final Result<GitDB> gitDB = GitDB.initLocal(dir, userName, userEmailAddress);
         //then
-        assertThat(gitDB).isNotNull();
+        assertThat(gitDB.isOkay()).isTrue();
         assertThatIsBareRepo(dir);
+    }
+
+    private Path dirDoesNotExist() throws IOException {
+        final Path directory = Files.createTempDirectory("gitdb");
+        Files.delete(directory);
+        return directory;
     }
 
     private void assertThatIsBareRepo(final Path dbDir) throws IOException {
@@ -65,21 +71,20 @@ class GitDBTest implements WithAssertions {
         assertThat(repository.getDirectory()).isEqualTo(dbDir.toFile());
     }
 
-    private Path dirDoesNotExist() throws IOException {
-        final Path directory = Files.createTempDirectory("gitdb");
-        Files.delete(directory);
-        return directory;
-    }
-
     // When initialising a repo in a dir that is a file then an exception is thrown
     @Test
     void initRepo_whenDirIsFile_thenThrowException() throws IOException {
         //given
         final Path dir = fileExists();
+        //when
+        final Result<GitDB> gitDBResult = GitDB.initLocal(dir, userName, userEmailAddress);
         //then
-        assertThatExceptionOfType(NotDirectoryException.class)
-                .isThrownBy(() -> GitDB.initLocal(dir, userName, userEmailAddress))
-                .withMessageContaining(dir.toString());
+        gitDBResult.match(
+                success -> fail("Is a file not a directory"),
+                error -> assertThat(error)
+                        .isInstanceOf(NotDirectoryException.class)
+                        .hasMessageContaining(dir.toString())
+        );
     }
 
     private Path fileExists() throws IOException {
@@ -92,18 +97,23 @@ class GitDBTest implements WithAssertions {
         //given
         final Path dir = dirExists();
         filesExistIn(dir);
+        //when
+        final Result<GitDB> gitDBResult = GitDB.initLocal(dir, userName, userEmailAddress);
         //then
-        assertThatExceptionOfType(DirectoryNotEmptyException.class)
-                .isThrownBy(() -> GitDB.initLocal(dir, userName, userEmailAddress))
-                .withMessageContaining(dir.toString());
-    }
-
-    private void filesExistIn(final Path dir) throws IOException {
-        Files.createTempFile(dir, "gitdb", "file");
+        gitDBResult.match(
+                success -> fail("Directory is not empty"),
+                error -> assertThat(error)
+                        .isInstanceOf(DirectoryNotEmptyException.class)
+                        .hasMessageContaining(dir.toString())
+        );
     }
 
     private Path dirExists() throws IOException {
         return Files.createTempDirectory("gitdb");
+    }
+
+    private void filesExistIn(final Path dir) throws IOException {
+        Files.createTempFile(dir, "gitdb", "file");
     }
 
     // When initialising a repo in a empty dir then a bare repo is created
@@ -112,9 +122,9 @@ class GitDBTest implements WithAssertions {
         //given
         final Path dir = dirExists();
         //when
-        final GitDB gitDB = GitDB.initLocal(dir, userName, userEmailAddress);
+        final Result<GitDB> gitDB = GitDB.initLocal(dir, userName, userEmailAddress);
         //then
-        assertThat(gitDB).isNotNull();
+        assertThat(gitDB.isOkay()).isTrue();
         assertThatIsBareRepo(dir);
     }
 
@@ -123,10 +133,16 @@ class GitDBTest implements WithAssertions {
     void openRepo_NotBareRepo_thenThrowException() throws IOException {
         //given
         final Path dir = dirExists();
+        //when
+        final Result<GitDB> gitDBResult = GitDB.openLocal(dir, userName, userEmailAddress);
         //then
-        assertThatExceptionOfType(InvalidRepositoryException.class)
-                .isThrownBy(() -> GitDB.openLocal(dir, userName, userEmailAddress))
-                .withMessageContaining(dir.toString());
+        gitDBResult.match(
+                success -> fail("Not a bare repo"),
+                error -> assertThat(error)
+                        .isInstanceOf(InvalidRepositoryException.class)
+                        .hasMessageContaining(dir.toString())
+        );
+
     }
 
     // When opening a repo in a dir that is a file then an exception is thrown
@@ -134,10 +150,15 @@ class GitDBTest implements WithAssertions {
     void openRepo_whenDirIsFile_thenThrowException() throws IOException {
         //given
         final Path dir = fileExists();
+        //when
+        final Result<GitDB> gitDBResult = GitDB.openLocal(dir, userName, userEmailAddress);
         //then
-        assertThatExceptionOfType(InvalidRepositoryException.class)
-                .isThrownBy(() -> GitDB.openLocal(dir, userName, userEmailAddress))
-                .withMessageContaining(dir.toString());
+        gitDBResult.match(
+                success -> fail("Directory is a file"),
+                error -> assertThat(error)
+                        .isInstanceOf(InvalidRepositoryException.class)
+                        .hasMessageContaining(dir.toString())
+        );
     }
 
     // When opening a repo in a dir that doesn't exist then an exception is thrown
@@ -145,10 +166,15 @@ class GitDBTest implements WithAssertions {
     void openRepo_whenDirNotExist_thenThrowException() throws IOException {
         //given
         final Path dir = dirDoesNotExist();
+        //when
+        final Result<GitDB> gitDBResult = GitDB.openLocal(dir, userName, userEmailAddress);
         //then
-        assertThatExceptionOfType(InvalidRepositoryException.class)
-                .isThrownBy(() -> GitDB.openLocal(dir, userName, userEmailAddress))
-                .withMessageContaining(dir.toString());
+        gitDBResult.match(
+                success -> fail("Directory does not exist"),
+                error -> assertThat(error)
+                        .isInstanceOf(InvalidRepositoryException.class)
+                        .hasMessageContaining(dir.toString())
+        );
     }
 
     // When opening a repo in a dir that is not a bare repo then an exception is thrown
@@ -156,12 +182,17 @@ class GitDBTest implements WithAssertions {
     void openRepo_whenRepoNotBare_thenThrowException() throws IOException, GitAPIException {
         //given
         final Path dir = nonBareRepo();
+        //when
+        final Result<GitDB> gitDBResult = GitDB.openLocal(dir, userName, userEmailAddress);
         //then
-        assertThatExceptionOfType(InvalidRepositoryException.class)
-                .isThrownBy(() -> GitDB.openLocal(dir, userName, userEmailAddress))
-                .withMessageContaining("Invalid GitDB repo")
-                .withMessageContaining("Not a bare repo")
-                .withMessageContaining(dir.toString());
+        gitDBResult.match(
+                success -> fail("Not a bare repo"),
+                error -> assertThat(error)
+                        .isInstanceOf(InvalidRepositoryException.class)
+                        .hasMessageContaining("Invalid GitDB repo")
+                        .hasMessageContaining("Not a bare repo")
+                        .hasMessageContaining(dir.toString())
+        );
     }
 
     private Path nonBareRepo() throws IOException, GitAPIException {
@@ -176,9 +207,13 @@ class GitDBTest implements WithAssertions {
         //given
         final Path dir = gitDBRepoPath();
         //when
-        final GitDB gitDB = GitDB.openLocal(dir, userName, userEmailAddress);
+        final Result<GitDB> gitDB = GitDB.openLocal(dir, userName, userEmailAddress);
         //then
-        assertThat(gitDB).isNotNull();
+        assertThat(gitDB.isOkay()).isTrue();
+        gitDB.match(
+                success -> assertThat(success).isNotNull(),
+                error -> fail("did not open local repo")
+        );
     }
 
     private Path gitDBRepoPath() throws IOException {
@@ -189,51 +224,55 @@ class GitDBTest implements WithAssertions {
 
     // Given a valid GitDb handle
 
-    private GitDB gitDB(final Path dbDir) throws IOException {
-        return GitDB.initLocal(dbDir, userName, userEmailAddress);
-    }
-
     // When select a branch that doesn't exist then an empty Optional is returned
     @Test
-    void selectBranch_whenBranchNotExist_thenEmptyOptional() throws IOException {
+    void selectBranch_whenBranchNotExist_thenEmptyOptional() throws Throwable {
         //given
-        final GitDB gitDb = gitDB(dirDoesNotExist());
+        final Result<GitDB> gitDb = gitDB(dirDoesNotExist());
         //when
-        final Optional<GitDBBranch> branch = gitDb.branch("unknown");
+        final Result<Maybe<GitDBBranch>> branch = gitDb.flatMap(db -> db.branch("unknown"));
         //then
-        assertThat(branch).isEmpty();
+        assertThat(branch.orElseThrow().toOptional()).isEmpty();
+    }
+
+    private Result<GitDB> gitDB(final Path dbDir) {
+        return GitDB.initLocal(dbDir, userName, userEmailAddress);
     }
 
     // When select a valid branch then a GitDbBranch is returned
     @Test
-    void selectBranch_branchExists_thenReturnBranch() throws IOException {
+    void selectBranch_branchExists_thenReturnBranch() throws Throwable {
         //given
         final Path dbDir = dirDoesNotExist();
-        final GitDB gitDb = gitDB(dbDir);
+        final Result<GitDB> gitDb = gitDB(dbDir);
         //when
-        final Optional<GitDBBranch> branch = gitDb.branch("master");
+        final Result<Maybe<GitDBBranch>> branch = gitDb.flatMap(db -> db.branch("master"));
         //then
-        assertThat(branch).as("Branch master exists").isNotEmpty();
+        assertThat(branch.orElseThrow().toOptional()).as("Branch master exists").isNotEmpty();
     }
 
     // Given a valid GitDbBranch handle
 
-    private GitDBBranch gitDBBranch() throws IOException {
-        final GitDB gitDB = gitDB(dirDoesNotExist());
-        final Optional<GitDBBranch> branchOptional = gitDB.branch("master");
-        assumeThat(branchOptional).isNotEmpty();
-        return branchOptional.get();
-    }
-
     // When getting a key that does not exist then return an empty Optional
     @Test
-    void getKey_whenKeyNotExist_thenReturnEmptyOptional() throws IOException, ClassNotFoundException {
+    void getKey_whenKeyNotExist_thenReturnEmptyOptional() throws IOException {
         //given
         final GitDBBranch branch = gitDBBranch();
         //when
         final Optional<String> value = branch.get("unknown");
         //then
         assertThat(value).isEmpty();
+    }
+
+    private GitDBBranch gitDBBranch() {
+        try {
+            return gitDB(dirDoesNotExist())
+                    .flatMap(db -> db.branch("master"))
+                    .orElseThrow()
+                    .orElse(null);
+        } catch (Throwable throwable) {
+            throw new RuntimeException("Couldn't create master branch");
+        }
     }
 
     // When getting the format version it matches expected
@@ -263,7 +302,7 @@ class GitDBTest implements WithAssertions {
 
     // When getting a key that does exist then the value is returned inside an Optional
     @Test
-    void getKey_whenExists_thenReturnValueInOptional() throws IOException, ClassNotFoundException {
+    void getKey_whenExists_thenReturnValueInOptional() throws IOException {
         //given
         final String key = stringSupplier.get();
         final String value = stringSupplier.get();
