@@ -22,10 +22,11 @@
 package net.kemitix.gitdb.impl;
 
 import lombok.RequiredArgsConstructor;
+import net.kemitix.mon.maybe.Maybe;
+import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.lib.*;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -39,6 +40,28 @@ import java.util.function.Predicate;
 class KeyRemover {
 
     private final Repository repository;
+
+    /**
+     * Remove a key from the repository.
+     *
+     * @param branchRef the branch to update
+     * @param key       the key to remove
+     * @return the id of the updated tree
+     */
+    Result<Maybe<ObjectId>> remove(final Ref branchRef, final String key) {
+        final TreeFormatter treeFormatter = new TreeFormatter();
+        final AtomicBoolean removed = new AtomicBoolean(false);
+        try {
+            new GitTreeReader(repository)
+                    .stream(branchRef)
+                    .peek(flagIfFound(key, removed))
+                    .filter(isNotKey(key))
+                    .forEach(addToTree(treeFormatter));
+            return insertTree(treeFormatter).maybe(oi -> removed.get());
+        } catch (IOException e) {
+            return Result.error(e);
+        }
+    }
 
     /**
      * Sets the boolean to true if the key matches a NamedRevBlob's name.
@@ -76,37 +99,16 @@ class KeyRemover {
     }
 
     /**
-     * Remove a key from the repository.
-     *
-     * @param branchRef the branch to update
-     * @param key       the key to remove
-     * @return the id of the updated tree
-     * @throws IOException if there is an error writing the value
-     */
-    Optional<ObjectId> remove(final Ref branchRef, final String key) throws IOException {
-        final TreeFormatter treeFormatter = new TreeFormatter();
-        final AtomicBoolean removed = new AtomicBoolean(false);
-        new GitTreeReader(repository)
-                .stream(branchRef)
-                .peek(flagIfFound(key, removed))
-                .filter(isNotKey(key))
-                .forEach(addToTree(treeFormatter));
-        if (removed.get()) {
-            return Optional.of(insertTree(treeFormatter));
-        }
-        return Optional.empty();
-    }
-
-    /**
      * Insert a tree into the repo, returning its id.
      *
      * @param treeFormatter the formatter containing the proposed tree's data.
      * @return the name of the tree object.
-     * @throws IOException the object could not be stored.
      */
-    private ObjectId insertTree(final TreeFormatter treeFormatter) throws IOException {
+    private Result<ObjectId> insertTree(final TreeFormatter treeFormatter) {
         try (ObjectInserter inserter = repository.getObjectDatabase().newInserter()) {
-            return inserter.insert(treeFormatter);
+            return Result.ok(inserter.insert(treeFormatter));
+        } catch (IOException e) {
+            return Result.error(e);
         }
     }
 }

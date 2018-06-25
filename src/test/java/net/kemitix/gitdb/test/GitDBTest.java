@@ -24,8 +24,8 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @ExtendWith(MockitoExtension.class)
@@ -80,7 +80,7 @@ class GitDBTest implements WithAssertions {
         final Result<GitDB> gitDBResult = GitDB.initLocal(dir, userName, userEmailAddress);
         //then
         gitDBResult.match(
-                success -> fail("Is a file not a directory"),
+                failOnSuccess("Is a file not a directory"),
                 error -> assertThat(error)
                         .isInstanceOf(NotDirectoryException.class)
                         .hasMessageContaining(dir.toString())
@@ -89,6 +89,10 @@ class GitDBTest implements WithAssertions {
 
     private Path fileExists() throws IOException {
         return Files.createTempFile("gitdb", "file");
+    }
+
+    private <T> Consumer<T> failOnSuccess(String message) {
+        return success -> fail(message);
     }
 
     // When initialising a repo in a non-empty dir then an exception is thrown
@@ -101,7 +105,7 @@ class GitDBTest implements WithAssertions {
         final Result<GitDB> gitDBResult = GitDB.initLocal(dir, userName, userEmailAddress);
         //then
         gitDBResult.match(
-                success -> fail("Directory is not empty"),
+                failOnSuccess("Directory is not empty"),
                 error -> assertThat(error)
                         .isInstanceOf(DirectoryNotEmptyException.class)
                         .hasMessageContaining(dir.toString())
@@ -137,7 +141,7 @@ class GitDBTest implements WithAssertions {
         final Result<GitDB> gitDBResult = GitDB.openLocal(dir, userName, userEmailAddress);
         //then
         gitDBResult.match(
-                success -> fail("Not a bare repo"),
+                failOnSuccess("Not a bare repo"),
                 error -> assertThat(error)
                         .isInstanceOf(InvalidRepositoryException.class)
                         .hasMessageContaining(dir.toString())
@@ -154,7 +158,7 @@ class GitDBTest implements WithAssertions {
         final Result<GitDB> gitDBResult = GitDB.openLocal(dir, userName, userEmailAddress);
         //then
         gitDBResult.match(
-                success -> fail("Directory is a file"),
+                failOnSuccess("Directory is a file"),
                 error -> assertThat(error)
                         .isInstanceOf(InvalidRepositoryException.class)
                         .hasMessageContaining(dir.toString())
@@ -170,7 +174,7 @@ class GitDBTest implements WithAssertions {
         final Result<GitDB> gitDBResult = GitDB.openLocal(dir, userName, userEmailAddress);
         //then
         gitDBResult.match(
-                success -> fail("Directory does not exist"),
+                failOnSuccess("Directory does not exist"),
                 error -> assertThat(error)
                         .isInstanceOf(InvalidRepositoryException.class)
                         .hasMessageContaining(dir.toString())
@@ -186,7 +190,7 @@ class GitDBTest implements WithAssertions {
         final Result<GitDB> gitDBResult = GitDB.openLocal(dir, userName, userEmailAddress);
         //then
         gitDBResult.match(
-                success -> fail("Not a bare repo"),
+                failOnSuccess("Not a bare repo"),
                 error -> assertThat(error)
                         .isInstanceOf(InvalidRepositoryException.class)
                         .hasMessageContaining("Invalid GitDB repo")
@@ -259,20 +263,35 @@ class GitDBTest implements WithAssertions {
         //given
         final GitDBBranch branch = gitDBBranch();
         //when
-        final Optional<String> value = branch.get("unknown");
+        final Result<Maybe<String>> value = branch.get("unknown");
         //then
-        assertThat(value).isEmpty();
+        value.match(
+                success -> assertThat(success.toOptional()).isEmpty(),
+                failOnError()
+        );
     }
 
     private GitDBBranch gitDBBranch() {
         try {
-            return gitDB(dirDoesNotExist())
-                    .flatMap(db -> db.branch("master"))
-                    .orElseThrow()
-                    .orElse(null);
+            final Result<GitDB> gitDBResult = gitDB(dirDoesNotExist());
+            System.out.println("gitDBResult = " + gitDBResult);
+            final Result<Maybe<GitDBBranch>> master = gitDBResult.flatMap(db -> {
+                final Result<Maybe<GitDBBranch>> maybeResult = db.branch("master");
+                System.out.println("maybeResult = " + maybeResult);
+                return maybeResult;
+            });
+            assert master != null;
+            System.out.println("master = " + master);
+            final Maybe<GitDBBranch> gitDBBranchMaybe = master.orElseThrow();
+            final GitDBBranch gitDBBranch = gitDBBranchMaybe.orElse(null);
+            return gitDBBranch;
         } catch (Throwable throwable) {
-            throw new RuntimeException("Couldn't create master branch");
+            throw new RuntimeException("Couldn't create master branch", throwable);
         }
+    }
+
+    private Consumer<Throwable> failOnError() {
+        return error -> fail("Not an error");
     }
 
     // When getting the format version it matches expected
@@ -280,12 +299,14 @@ class GitDBTest implements WithAssertions {
     void getVersionFormat_thenFormatIsSet() throws IOException {
         //given
         final GitDBBranch gitDBBranch = gitDBBranch();
-        //when
-        final Optional<Version> formatVersion = gitDBBranch.getFormatVersion();
-        //then
         final Version version = new FormatVersion().getVersion();
-        assertThat(formatVersion).contains(version);
-        assertThat(formatVersion.get()).isNotSameAs(version);
+        //when
+        final Result<Maybe<Version>> formatVersion = gitDBBranch.getFormatVersion();
+        //then
+        formatVersion.match(
+                success -> success.peek(v -> assertThat(v).isEqualTo(version).isNotSameAs(version)),
+                failOnError()
+        );
     }
 
     // When putting a key/value pair then a GitDbBranch is returned
@@ -294,10 +315,14 @@ class GitDBTest implements WithAssertions {
         //given
         final GitDBBranch originalBranch = gitDBBranch();
         //when
-        final GitDBBranch updatedBranch = originalBranch.put("key-name", "value");
+        final Result<GitDBBranch> updatedBranch = originalBranch.put("key-name", "value");
         //then
-        assertThat(updatedBranch).isNotNull();
-        assertThat(updatedBranch).isNotSameAs(originalBranch);
+        updatedBranch.match(
+                success -> assertThat(success).isNotNull().isNotSameAs(originalBranch),
+                failOnError()
+        );
+        assertThat(updatedBranch).isNotNull()
+                .isNotSameAs(originalBranch);
     }
 
     // When getting a key that does exist then the value is returned inside an Optional
@@ -307,11 +332,14 @@ class GitDBTest implements WithAssertions {
         final String key = stringSupplier.get();
         final String value = stringSupplier.get();
         final GitDBBranch originalBranch = gitDBBranch();
-        final GitDBBranch updatedBranch = originalBranch.put(key, value);
+        final Result<GitDBBranch> updatedBranch = originalBranch.put(key, value);
         //when
-        final Optional<String> result = updatedBranch.get(key);
+        final Result<Maybe<String>> result = updatedBranch.flatMap(b -> b.get(key));
         //then
-        assertThat(result).contains(value);
+        result.match(
+                success -> success.map(v -> assertThat(v).contains(value)),
+                failOnError()
+        );
     }
 
     // When removing a key that does not exist then the GitDbBranch is returned
@@ -320,9 +348,12 @@ class GitDBTest implements WithAssertions {
         //given
         final GitDBBranch gitDBBranch = gitDBBranch();
         //when
-        final GitDBBranch result = gitDBBranch.remove("unknown");
+        final Result<GitDBBranch> result = gitDBBranch.remove("unknown");
         //then
-        assertThat(result).isSameAs(gitDBBranch);
+        result.match(
+                success -> assertThat(success).isSameAs(gitDBBranch),
+                failOnError()
+        );
     }
 
     // When removing a key that does exist then a GitDbBranch is returned
@@ -331,14 +362,17 @@ class GitDBTest implements WithAssertions {
         //given
         final String key = stringSupplier.get();
         final String value = stringSupplier.get();
-        final GitDBBranch originalBranch = gitDBBranchWithKeyValue(key, value);
+        final Result<GitDBBranch> originalBranch = gitDBBranchWithKeyValue(key, value);
         //when
-        final GitDBBranch updatedBranch = originalBranch.remove(key);
+        final Result<GitDBBranch> updatedBranch = originalBranch.flatMap(b -> b.remove(key));
         //then
-        assertThat(updatedBranch).isNotSameAs(originalBranch);
+        updatedBranch.match(
+                success -> assertThat(success).isNotSameAs(originalBranch),
+                failOnError()
+        );
     }
 
-    private GitDBBranch gitDBBranchWithKeyValue(final String key, final String value) throws IOException {
+    private Result<GitDBBranch> gitDBBranchWithKeyValue(final String key, final String value) throws IOException {
         return gitDBBranch().put(key, value);
     }
 
@@ -348,11 +382,15 @@ class GitDBTest implements WithAssertions {
         //given
         final String key = stringSupplier.get();
         final String value = stringSupplier.get();
-        final GitDBBranch originalBranch = gitDBBranchWithKeyValue(key, value);
+        final Result<GitDBBranch> originalBranch = gitDBBranchWithKeyValue(key, value);
         //when
-        final GitDBBranch updatedBranch = originalBranch.remove(key);
+        final Result<GitDBBranch> updatedBranch = originalBranch.flatMap(b -> b.remove(key));
         //then
-        assertThat(originalBranch.get(key)).contains(value);
+        originalBranch.flatMap(b -> b.get(key))
+                .match(
+                        success -> assertThat(success.toOptional()).contains(value),
+                        failOnError()
+                );
     }
 
     // When removing a key that does exist then the updated GitDbBranch can't find it
@@ -361,11 +399,15 @@ class GitDBTest implements WithAssertions {
         //given
         final String key = stringSupplier.get();
         final String value = stringSupplier.get();
-        final GitDBBranch originalBranch = gitDBBranchWithKeyValue(key, value);
+        final Result<GitDBBranch> originalBranch = gitDBBranchWithKeyValue(key, value);
         //when
-        final GitDBBranch updatedBranch = originalBranch.remove(key);
+        final Result<GitDBBranch> updatedBranch = originalBranch.flatMap(b -> b.remove(key));
         //then
-        assertThat(updatedBranch.get(key)).isEmpty();
+        updatedBranch.flatMap(b -> b.get(key))
+                .match(
+                        success -> assertThat(success.toOptional()).isEmpty(),
+                        failOnError()
+                );
     }
 
 }

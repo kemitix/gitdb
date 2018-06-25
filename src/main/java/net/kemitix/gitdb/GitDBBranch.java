@@ -22,9 +22,8 @@
 package net.kemitix.gitdb;
 
 import com.github.zafarkhaja.semver.Version;
-
-import java.io.IOException;
-import java.util.Optional;
+import net.kemitix.mon.maybe.Maybe;
+import net.kemitix.mon.result.Result;
 
 /**
  * API for interacting with a branch in a GirDB.
@@ -38,9 +37,8 @@ public interface GitDBBranch {
      *
      * @param key the key to lookup
      * @return an Optional containing the value, if it exists, or empty if not
-     * @throws IOException if there was an error reading the value
      */
-    Optional<String> get(String key) throws IOException;
+    Result<Maybe<String>> get(String key);
 
     /**
      * Put a value into the store for the key.
@@ -48,18 +46,16 @@ public interface GitDBBranch {
      * @param key   the key to place the value under
      * @param value the value (must be Serializable)
      * @return an updated branch containing the new key/value
-     * @throws IOException if there was an error writing the key/value
      */
-    GitDBBranch put(String key, String value) throws IOException;
+    Result<GitDBBranch> put(String key, String value);
 
     /**
      * Removes a key and its value from the store.
      *
      * @param key the key to remove
      * @return an updated branch without the key, or the original if the key was not found
-     * @throws IOException if there was an error removing the key/value
      */
-    GitDBBranch remove(String key) throws IOException;
+    Result<GitDBBranch> remove(String key);
 
     /**
      * Returns the GitDB format for the current branch.
@@ -67,8 +63,7 @@ public interface GitDBBranch {
      * <p>Different branches can have different versions.</p>
      *
      * @return the format as per semantic versioning, i.e. "x.y.z" within an Optional
-     * @throws IOException error reading version
      */
-    Optional<Version> getFormatVersion() throws IOException;
+    Result<Maybe<Version>> getFormatVersion();
 
 }
