@@ -13,37 +13,22 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
-@ExtendWith(MockitoExtension.class)
 class GitDBTest implements WithAssertions {
 
     private final Supplier<String> stringSupplier = UUID.randomUUID()::toString;
     private final String userName = stringSupplier.get();
     private final String userEmailAddress = stringSupplier.get();
-
-    private static void tree(final Path dbDir, final PrintStream out) throws IOException {
-        final Process treeProcess = new ProcessBuilder("tree", dbDir.toString()).start();
-        try (final BufferedReader reader = new BufferedReader(new InputStreamReader(treeProcess.getInputStream()))) {
-            String line;
-            while (null != (line = reader.readLine())) {
-                out.println("line = " + line);
-            }
-        }
-    }
 
     // When initialising a repo in a dir that doesn't exist then a bare repo is created
     @Test
@@ -53,7 +38,7 @@ class GitDBTest implements WithAssertions {
         //when
         final Result<GitDB> gitDB = GitDB.initLocal(dir, userName, userEmailAddress);
         //then
-        assertThat(gitDB.isOkay()).isTrue();
+        assertThatResultIsOkay(gitDB);
         assertThatIsBareRepo(dir);
     }
 
@@ -61,6 +46,10 @@ class GitDBTest implements WithAssertions {
         final Path directory = Files.createTempDirectory("gitdb");
         Files.delete(directory);
         return directory;
+    }
+
+    private <T> void assertThatResultIsOkay(final Result<T> result) {
+        assertThat(result.isOkay()).isTrue();
     }
 
     private void assertThatIsBareRepo(final Path dbDir) throws IOException {
@@ -128,7 +117,7 @@ class GitDBTest implements WithAssertions {
         //when
         final Result<GitDB> gitDB = GitDB.initLocal(dir, userName, userEmailAddress);
         //then
-        assertThat(gitDB.isOkay()).isTrue();
+        assertThatResultIsOkay(gitDB);
         assertThatIsBareRepo(dir);
     }
 
@@ -234,7 +223,7 @@ class GitDBTest implements WithAssertions {
         //given
         final Result<GitDB> gitDb = gitDB(dirDoesNotExist());
         //when
-        final Result<Maybe<GitDBBranch>> branch = gitDb.flatMap(db -> db.branch("unknown"));
+        final Result<Maybe<GitDBBranch>> branch = gitDb.flatMap(selectBranch("unknown"));
         //then
         assertThat(branch.orElseThrow().toOptional()).isEmpty();
     }
@@ -243,6 +232,12 @@ class GitDBTest implements WithAssertions {
         return GitDB.initLocal(dbDir, userName, userEmailAddress);
     }
 
+    private Function<GitDB, Result<Maybe<GitDBBranch>>> selectBranch(final String branchName) {
+        return db -> db.branch(branchName);
+    }
+
+    // Given a valid GitDbBranch handle
+
     // When select a valid branch then a GitDbBranch is returned
     @Test
     void selectBranch_branchExists_thenReturnBranch() throws Throwable {
@@ -250,12 +245,10 @@ class GitDBTest implements WithAssertions {
         final Path dbDir = dirDoesNotExist();
         final Result<GitDB> gitDb = gitDB(dbDir);
         //when
-        final Result<Maybe<GitDBBranch>> branch = gitDb.flatMap(db -> db.branch("master"));
+        final Result<Maybe<GitDBBranch>> branch = gitDb.flatMap(selectBranch("master"));
         //then
         assertThat(branch.orElseThrow().toOptional()).as("Branch master exists").isNotEmpty();
     }
-
-    // Given a valid GitDbBranch handle
 
     // When getting a key that does not exist then return an empty Optional
     @Test
@@ -273,18 +266,9 @@ class GitDBTest implements WithAssertions {
 
     private GitDBBranch gitDBBranch() {
         try {
-            final Result<GitDB> gitDBResult = gitDB(dirDoesNotExist());
-            System.out.println("gitDBResult = " + gitDBResult);
-            final Result<Maybe<GitDBBranch>> master = gitDBResult.flatMap(db -> {
-                final Result<Maybe<GitDBBranch>> maybeResult = db.branch("master");
-                System.out.println("maybeResult = " + maybeResult);
-                return maybeResult;
-            });
-            assert master != null;
-            System.out.println("master = " + master);
-            final Maybe<GitDBBranch> gitDBBranchMaybe = master.orElseThrow();
-            final GitDBBranch gitDBBranch = gitDBBranchMaybe.orElse(null);
-            return gitDBBranch;
+            return gitDB(dirDoesNotExist())
+                    .flatMap(selectBranch("master"))
+                    .orElseThrow().orElse(null);
         } catch (Throwable throwable) {
             throw new RuntimeException("Couldn't create master branch", throwable);
         }
@@ -321,8 +305,6 @@ class GitDBTest implements WithAssertions {
                 success -> assertThat(success).isNotNull().isNotSameAs(originalBranch),
                 failOnError()
         );
-        assertThat(updatedBranch).isNotNull()
-                .isNotSameAs(originalBranch);
     }
 
     // When getting a key that does exist then the value is returned inside an Optional
