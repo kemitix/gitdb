@@ -21,7 +21,6 @@
 
 package net.kemitix.gitdb.impl;
 
-import lombok.val;
 import net.kemitix.mon.maybe.Maybe;
 import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.lib.ObjectId;
@@ -30,6 +29,7 @@ import org.eclipse.jgit.lib.Repository;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Stream;
 
 /**
  * Wrapper for interacting with the GitDB Repository.
@@ -85,15 +85,17 @@ class GitDBRepo {
             final Ref branchRef,
             final String key
     ) {
+        final GitTreeReader treeFilter = new GitTreeReader(repository).treeFilter(key);
+        return streamTree(branchRef, treeFilter).flatMap(s ->
+                Result.invert(s.findFirst()
+                        .map(NamedRevBlob::blobAsString)
+                        .map(Maybe::just)
+                        .orElseGet(Maybe::nothing)));
+    }
+
+    private Result<Stream<NamedRevBlob>> streamTree(final Ref branchRef, final GitTreeReader treeFilter) {
         try {
-            val blob = new GitTreeReader(repository)
-                    .treeFilter(key)
-                    .stream(branchRef)
-                    .findFirst();
-            if (blob.isPresent()) {
-                return Result.ok(Maybe.just(blob.get().blobAsString()));
-            }
-            return Result.ok(Maybe.nothing());
+            return Result.ok(treeFilter.stream(branchRef));
         } catch (IOException e) {
             return Result.error(e);
         }
