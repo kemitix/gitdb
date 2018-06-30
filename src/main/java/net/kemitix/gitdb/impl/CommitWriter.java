@@ -21,9 +21,8 @@
 
 package net.kemitix.gitdb.impl;
 
+import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.lib.*;
-
-import java.io.IOException;
 
 /**
  * Commits Key/Value updates into the Git Repository.
@@ -52,15 +51,14 @@ class CommitWriter {
      * @param userName         the user name
      * @param userEmailAddress the user email address
      * @return the id of the commit
-     * @throws IOException if there is an error writing the value
      */
-    ObjectId write(
+    Result<ObjectId> write(
             final ObjectId treeId,
             final ObjectId parentId,
             final String message,
             final String userName,
             final String userEmailAddress
-    ) throws IOException {
+    ) {
         final CommitBuilder commitBuilder = new CommitBuilder();
         commitBuilder.setTreeId(treeId);
         commitBuilder.setMessage(message);
@@ -68,7 +66,7 @@ class CommitWriter {
         commitBuilder.setAuthor(ident);
         commitBuilder.setCommitter(ident);
         commitBuilder.setParentId(parentId);
-        return objectInserter.insert(commitBuilder);
+        return Result.of(() -> objectInserter.insert(commitBuilder));
     }
 
     /**
@@ -82,15 +80,14 @@ class CommitWriter {
      * @param userName         the user name
      * @param userEmailAddress the user email address
      * @return the id of the commit
-     * @throws IOException if there is an error writing the value
      */
-    ObjectId write(
+    Result<ObjectId> write(
             final ObjectId treeId,
             final Ref branchRef,
             final String message,
             final String userName,
             final String userEmailAddress
-    ) throws IOException {
+    ) {
         return write(treeId, branchRef.getObjectId(), message, userName, userEmailAddress);
     }
 }

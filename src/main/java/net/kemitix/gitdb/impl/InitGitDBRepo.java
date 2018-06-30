@@ -84,7 +84,7 @@ class InitGitDBRepo {
         return new ValueWriter(repository)
                 .write(new FormatVersion().toBytes())
                 .flatMap(oid -> repo.insertNewTree(GIT_DB_VERSION, oid))
-                .flatMap(tid -> Result.of(() -> repo.initialCommit(tid, INIT_MESSAGE, INIT_USER, INIT_EMAIL)))
+                .flatMap(tid -> repo.initialCommit(tid, INIT_MESSAGE, INIT_USER, INIT_EMAIL))
                 .flatMap(cid -> Result.of(() -> {
                     createBranch(repository, cid, MASTER);
                     return null;

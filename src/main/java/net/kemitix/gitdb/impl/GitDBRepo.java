@@ -27,7 +27,6 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
@@ -120,7 +119,6 @@ class GitDBRepo {
      * @param userName         the user name
      * @param userEmailAddress the user email address
      * @return the Ref of the updated branch
-     * @throws IOException if there was an error writing the branch
      */
     Result<Ref> writeCommit(
             final Ref branchRef,
@@ -129,12 +127,9 @@ class GitDBRepo {
             final String userName,
             final String userEmailAddress
     ) {
-        try {
-            final ObjectId commitId = insertCommit(tree, message, userName, userEmailAddress, branchRef);
-            return Result.ok(headWriter.write(branchRef.getName(), commitId));
-        } catch (IOException e) {
-            return Result.error(e);
-        }
+        return insertCommit(tree, message, userName, userEmailAddress, branchRef)
+                .flatMap(cid -> Result.of(() ->
+                        headWriter.write(branchRef.getName(), cid)));
     }
 
     /**
@@ -146,15 +141,14 @@ class GitDBRepo {
      * @param userName         the user name
      * @param userEmailAddress the user email address
      * @return the id of the commit
-     * @throws IOException the commit could not be stored
      */
-    ObjectId insertCommit(
+    Result<ObjectId> insertCommit(
             final ObjectId treeId,
             final String message,
             final String userName,
             final String userEmailAddress,
             final Ref branchRef
-    ) throws IOException {
+    ) {
         return commitWriter.write(treeId, branchRef, message, userName, userEmailAddress);
     }
 
@@ -166,14 +160,13 @@ class GitDBRepo {
      * @param initUser    the user name
      * @param initEmail   the user email address
      * @return the id of the commit
-     * @throws IOException if there was an error writing the commit
      */
-    ObjectId initialCommit(
+    Result<ObjectId> initialCommit(
             final ObjectId treeId,
             final String initMessage,
             final String initUser,
             final String initEmail
-    ) throws IOException {
+    ) {
         return commitWriter.write(treeId, ObjectId.zeroId(), initMessage, initUser, initEmail);
     }
 
@@ -186,7 +179,6 @@ class GitDBRepo {
      * @param key       the key to place the value under
      * @return an Optional containing the id of the updated tree containing the update, if the key was found, or an
      * empty Optional if there key was not found, the there was no changes made
-     * @throws IOException if there was an error writing the value
      */
     Result<Maybe<ObjectId>> removeKey(final Ref branchRef, final String key) {
         return keyRemover.remove(branchRef, key);
