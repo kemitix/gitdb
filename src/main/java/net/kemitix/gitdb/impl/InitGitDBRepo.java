@@ -51,32 +51,26 @@ class InitGitDBRepo {
      * Initialise a new GitDB repo.
      *
      * @param dbDir the directory to initialise the repo in
-     * @throws IOException if there is an error in creating the repo files
      */
     static Result<Void> create(final Path dbDir) {
         final InitGitDBRepo initRepo = new InitGitDBRepo();
-        final File validDbDir;
-        try {
-            validDbDir = initRepo.validDbDir(dbDir.toFile());
-        } catch (IOException e) {
-            return Result.error(e);
-        }
-        validDbDir.mkdirs();
-        try (Repository repository = RepositoryCache.FileKey.exact(validDbDir, FS.DETECTED).open(false)) {
-            repository.create(true);
-            initRepo.createInitialBranchOnMaster(repository);
-        } catch (IOException e) {
-            return Result.error(e);
-        }
-        return Result.ok(null);
+        return initRepo.validDbDir(dbDir.toFile())
+                .peek(File::mkdirs)
+                .flatMap(dir -> {
+                    try (Repository repository = RepositoryCache.FileKey.exact(dir, FS.DETECTED).open(false)) {
+                        repository.create(true);
+                        initRepo.createInitialBranchOnMaster(repository);
+                    } catch (IOException e) {
+                        return Result.error(e);
+                    }
+                    return Result.ok(null);
+                });
     }
 
-    private File validDbDir(final File dbDir) throws IOException {
-        verifyIsNotAFile(dbDir);
-        if (dbDir.exists()) {
-            verifyIsEmpty(dbDir);
-        }
-        return dbDir;
+    private Result<File> validDbDir(final File dbDir) {
+        return Result.ok(dbDir)
+                .flatMap(this::verifyIsNotAFile)
+                .flatMap(this::isEmptyIfExists);
     }
 
     private Result<Void> createInitialBranchOnMaster(final Repository repository) {
@@ -91,18 +85,26 @@ class InitGitDBRepo {
                 }));
     }
 
-    private void verifyIsNotAFile(final File dbDir) throws NotDirectoryException {
+    private Result<File> verifyIsNotAFile(final File dbDir) {
         if (dbDir.isFile()) {
-            throw new NotDirectoryException(dbDir.toString());
+            return Result.error(new NotDirectoryException(dbDir.toString()));
         }
+        return Result.ok(dbDir);
     }
 
-    private void verifyIsEmpty(final File dbDir) throws IOException {
-        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(dbDir.toPath())) {
-            if (directoryStream.iterator().hasNext()) {
-                throw new DirectoryNotEmptyException(dbDir.toString());
-            }
+    private Result<File> isEmptyIfExists(final File dbDir) {
+        if (dbDir.exists()) {
+            return Result.of(() -> {
+                        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(dbDir.toPath())) {
+                            if (directoryStream.iterator().hasNext()) {
+                                throw new DirectoryNotEmptyException(dbDir.toString());
+                            }
+                        }
+                        return dbDir;
+                    }
+            );
         }
+        return Result.ok(dbDir);
     }
 
     private Result<Void> createBranch(
