@@ -22,11 +22,11 @@
 package net.kemitix.gitdb.impl;
 
 import lombok.RequiredArgsConstructor;
+import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,16 +47,17 @@ class HeadWriter {
      * @param branchName the branch name
      * @param commitId   the commit to point the branch at
      * @return the Ref of the new branch
-     * @throws IOException error writing branch head
      */
-    Ref write(final String branchName, final ObjectId commitId) throws IOException {
+    Result<Ref> write(final String branchName, final ObjectId commitId) {
         final Path branchRefPath = repository
                 .getDirectory()
                 .toPath()
                 .resolve(branchName)
                 .toAbsolutePath();
         final byte[] commitIdBytes = commitId.name().getBytes(StandardCharsets.UTF_8);
-        Files.write(branchRefPath, commitIdBytes);
-        return repository.findRef(branchName);
+        return Result.of(() -> {
+            Files.write(branchRefPath, commitIdBytes);
+            return repository.findRef(branchName);
+        });
     }
 }
