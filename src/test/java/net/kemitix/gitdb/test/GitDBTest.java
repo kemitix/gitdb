@@ -252,7 +252,7 @@ class GitDBTest implements WithAssertions {
 
     // When getting a key that does not exist then return an empty Optional
     @Test
-    void getKey_whenKeyNotExist_thenReturnEmptyOptional() throws IOException {
+    void getKey_whenKeyNotExist_thenReturnEmptyOptional() {
         //given
         final GitDBBranch branch = gitDBBranch();
         //when
@@ -280,7 +280,7 @@ class GitDBTest implements WithAssertions {
 
     // When getting the format version it matches expected
     @Test
-    void getVersionFormat_thenFormatIsSet() throws IOException {
+    void getVersionFormat_thenFormatIsSet() {
         //given
         final GitDBBranch gitDBBranch = gitDBBranch();
         final Version version = new FormatVersion().getVersion();
@@ -295,7 +295,7 @@ class GitDBTest implements WithAssertions {
 
     // When putting a key/value pair then a GitDbBranch is returned
     @Test
-    void putValue_thenReturnUpdatedGitDBBranch() throws IOException {
+    void putValue_thenReturnUpdatedGitDBBranch() {
         //given
         final GitDBBranch originalBranch = gitDBBranch();
         //when
@@ -309,7 +309,7 @@ class GitDBTest implements WithAssertions {
 
     // When getting a key that does exist then the value is returned inside an Optional
     @Test
-    void getKey_whenExists_thenReturnValueInOptional() throws IOException {
+    void getKey_whenExists_thenReturnValueInOptional() {
         //given
         final String key = stringSupplier.get();
         final String value = stringSupplier.get();
@@ -326,7 +326,7 @@ class GitDBTest implements WithAssertions {
 
     // When removing a key that does not exist then the GitDbBranch is returned
     @Test
-    void removeKey_whenNotExist_thenReturnOriginal() throws IOException {
+    void removeKey_whenNotExist_thenReturnOriginal() {
         //given
         final GitDBBranch gitDBBranch = gitDBBranch();
         //when
@@ -340,7 +340,7 @@ class GitDBTest implements WithAssertions {
 
     // When removing a key that does exist then a GitDbBranch is returned
     @Test
-    void removeKey_whenExists_thenReturnUpdatedBranch() throws IOException {
+    void removeKey_whenExists_thenReturnUpdatedBranch() {
         //given
         final String key = stringSupplier.get();
         final String value = stringSupplier.get();
@@ -354,13 +354,13 @@ class GitDBTest implements WithAssertions {
         );
     }
 
-    private Result<GitDBBranch> gitDBBranchWithKeyValue(final String key, final String value) throws IOException {
+    private Result<GitDBBranch> gitDBBranchWithKeyValue(final String key, final String value) {
         return gitDBBranch().put(key, value);
     }
 
     // When removing a key that does exist then original GitDbBranch can still find it
     @Test
-    void removeKey_whenExists_thenOriginalCanStillFind() throws IOException {
+    void removeKey_whenExists_thenOriginalCanStillFind() {
         //given
         final String key = stringSupplier.get();
         final String value = stringSupplier.get();
@@ -377,7 +377,7 @@ class GitDBTest implements WithAssertions {
 
     // When removing a key that does exist then the updated GitDbBranch can't find it
     @Test
-    void removeKey_whenExists_thenUpdatedCanNotFind() throws IOException {
+    void removeKey_whenExists_thenUpdatedCanNotFind() {
         //given
         final String key = stringSupplier.get();
         final String value = stringSupplier.get();
