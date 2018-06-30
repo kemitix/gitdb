@@ -79,13 +79,16 @@ class InitGitDBRepo {
         return dbDir;
     }
 
-    private void createInitialBranchOnMaster(final Repository repository) throws IOException {
+    private Result<Void> createInitialBranchOnMaster(final Repository repository) {
         final GitDBRepo repo = new GitDBRepo(repository);
-        final ValueWriter valueWriter = new ValueWriter(repository);
-        final ObjectId objectId = valueWriter.write(new FormatVersion().toBytes());
-        final ObjectId treeId = repo.insertNewTree(GIT_DB_VERSION, objectId);
-        final ObjectId commitId = repo.initialCommit(treeId, INIT_MESSAGE, INIT_USER, INIT_EMAIL);
-        createBranch(repository, commitId, MASTER);
+        return new ValueWriter(repository)
+                .write(new FormatVersion().toBytes())
+                .flatMap(oid -> repo.insertNewTree(GIT_DB_VERSION, oid))
+                .flatMap(tid -> Result.of(() -> repo.initialCommit(tid, INIT_MESSAGE, INIT_USER, INIT_EMAIL)))
+                .flatMap(cid -> Result.of(() -> {
+                    createBranch(repository, cid, MASTER);
+                    return null;
+                }));
     }
 
     private void verifyIsNotAFile(final File dbDir) throws NotDirectoryException {
@@ -102,14 +105,17 @@ class InitGitDBRepo {
         }
     }
 
-    private void createBranch(
+    private Result<Void> createBranch(
             final Repository repository,
             final ObjectId commitId,
             final String branchName
-    ) throws IOException {
+    ) {
         final Path branchRefPath = branchRefPath(repository, branchName);
         final byte[] commitIdBytes = commitId.name().getBytes(StandardCharsets.UTF_8);
-        Files.write(branchRefPath, commitIdBytes);
+        return Result.of(() -> {
+            Files.write(branchRefPath, commitIdBytes);
+            return null;
+        });
     }
 
     private Path branchRefPath(

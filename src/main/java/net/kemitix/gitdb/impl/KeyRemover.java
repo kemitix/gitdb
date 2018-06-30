@@ -51,16 +51,12 @@ class KeyRemover {
     Result<Maybe<ObjectId>> remove(final Ref branchRef, final String key) {
         final TreeFormatter treeFormatter = new TreeFormatter();
         final AtomicBoolean removed = new AtomicBoolean(false);
-        try {
-            new GitTreeReader(repository)
-                    .stream(branchRef)
-                    .peek(flagIfFound(key, removed))
-                    .filter(isNotKey(key))
-                    .forEach(addToTree(treeFormatter));
-            return insertTree(treeFormatter).maybe(oi -> removed.get());
-        } catch (IOException e) {
-            return Result.error(e);
-        }
+        new GitTreeReader(repository)
+                .stream(branchRef)
+                .peek(s -> s.peek(flagIfFound(key, removed))
+                        .filter(isNotKey(key))
+                        .forEach(addToTree(treeFormatter)));
+        return insertTree(treeFormatter).maybe(oi -> removed.get());
     }
 
     /**

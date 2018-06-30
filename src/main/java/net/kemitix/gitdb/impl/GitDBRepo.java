@@ -65,12 +65,11 @@ class GitDBRepo {
      * @param key     the key to insert
      * @param valueId id of the value
      * @return the id of the inserted tree
-     * @throws IOException the tree could not be stored
      */
-    ObjectId insertNewTree(
+    Result<ObjectId> insertNewTree(
             final String key,
             final ObjectId valueId
-    ) throws IOException {
+    ) {
         return keyWriter.writeFirst(key, valueId);
     }
 
@@ -94,11 +93,7 @@ class GitDBRepo {
     }
 
     private Result<Stream<NamedRevBlob>> streamTree(final Ref branchRef, final GitTreeReader treeFilter) {
-        try {
-            return Result.ok(treeFilter.stream(branchRef));
-        } catch (IOException e) {
-            return Result.error(e);
-        }
+        return treeFilter.stream(branchRef);
     }
 
     /**
@@ -110,11 +105,10 @@ class GitDBRepo {
      * @param key       the key to place the value under
      * @param value     the value
      * @return the id of the updated tree containing the update
-     * @throws IOException if there was an error writing the value
      */
-    ObjectId writeValue(final Ref branchRef, final String key, final String value) throws IOException {
-        final ObjectId blob = valueWriter.write(value.getBytes(StandardCharsets.UTF_8));
-        return keyWriter.write(key, blob, branchRef);
+    Result<ObjectId> writeValue(final Ref branchRef, final String key, final String value) {
+        return valueWriter.write(value.getBytes(StandardCharsets.UTF_8))
+                .flatMap(b -> keyWriter.write(key, b, branchRef));
     }
 
     /**

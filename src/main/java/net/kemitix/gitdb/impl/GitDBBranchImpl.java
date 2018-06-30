@@ -31,7 +31,6 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 
-import java.io.IOException;
 import java.util.function.Function;
 
 /**
@@ -81,14 +80,10 @@ class GitDBBranchImpl implements GitDBBranch {
 
     @Override
     public Result<GitDBBranch> put(final String key, final String value) {
-        try {
-            final ObjectId newTree = gitDBRepo.writeValue(branchRef, KEY_PREFIX + key, value);
-            final String message = String.format("Add key [%s] = [%s]", key, value);
-            final Result<Ref> newBranch = gitDBRepo.writeCommit(branchRef, newTree, message, userName, userEmailAddress);
-            return newBranch.flatMap(b -> select(b, gitDBRepo, userName, userEmailAddress));
-        } catch (IOException e) {
-            return Result.error(e);
-        }
+        final String message = String.format("Add key [%s] = [%s]", key, value);
+        return gitDBRepo.writeValue(branchRef, KEY_PREFIX + key, value)
+                .flatMap(nt -> gitDBRepo.writeCommit(branchRef, nt, message, userName, userEmailAddress))
+                .flatMap(nb -> select(nb, gitDBRepo, userName, userEmailAddress));
     }
 
     @Override

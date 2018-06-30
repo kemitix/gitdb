@@ -21,12 +21,11 @@
 
 package net.kemitix.gitdb.impl;
 
+import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectInserter;
 import org.eclipse.jgit.lib.Repository;
-
-import java.io.IOException;
 
 /**
  * Writes Values into the Git Repository.
@@ -51,9 +50,8 @@ class ValueWriter {
      *
      * @param blob the value blob
      * @return the id of the value object
-     * @throws IOException if there is an error writing the value
      */
-    ObjectId write(final byte[] blob) throws IOException {
-        return objectInserter.insert(Constants.OBJ_BLOB, blob);
+    Result<ObjectId> write(final byte[] blob) {
+        return Result.of(() -> objectInserter.insert(Constants.OBJ_BLOB, blob));
     }
 }
