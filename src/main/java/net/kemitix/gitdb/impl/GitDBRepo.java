@@ -21,14 +21,14 @@
 
 package net.kemitix.gitdb.impl;
 
-import lombok.val;
+import net.kemitix.mon.maybe.Maybe;
+import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Wrapper for interacting with the GitDB Repository.
@@ -47,7 +47,7 @@ class GitDBRepo {
     /**
      * Creates a new instance of this class.
      *
-     * @param repository       the Git Repository
+     * @param repository the Git Repository
      */
     GitDBRepo(final Repository repository) {
         this.repository = repository;
@@ -64,34 +64,12 @@ class GitDBRepo {
      * @param key     the key to insert
      * @param valueId id of the value
      * @return the id of the inserted tree
-     * @throws IOException the tree could not be stored
      */
-    ObjectId insertNewTree(
+    Result<ObjectId> insertNewTree(
             final String key,
             final ObjectId valueId
-    ) throws IOException {
+    ) {
         return keyWriter.writeFirst(key, valueId);
-    }
-
-    /**
-     * Insert a commit into the store, returning its unique id.
-     *
-     * @param treeId           id of the tree
-     * @param branchRef        the branch to commit to
-     * @param message          the message
-     * @param userName         the user name
-     * @param userEmailAddress the user email address
-     * @return the id of the commit
-     * @throws IOException the commit could not be stored
-     */
-    ObjectId insertCommit(
-            final ObjectId treeId,
-            final String message,
-            final String userName,
-            final String userEmailAddress,
-            final Ref branchRef
-    ) throws IOException {
-        return commitWriter.write(treeId, branchRef, message, userName, userEmailAddress);
     }
 
     /**
@@ -100,20 +78,21 @@ class GitDBRepo {
      * @param branchRef the branch to select from
      * @param key       the key to get the value for
      * @return an Optional containing the value if found, or empty
-     * @throws IOException if there was an error reading the value
      */
-    Optional<String> readValue(
+    Result<Maybe<String>> readValue(
             final Ref branchRef,
             final String key
-    ) throws IOException {
-        val blob = new GitTreeReader(repository)
-                .treeFilter(key)
-                .stream(branchRef)
-                .findFirst();
-        if (blob.isPresent()) {
-            return Optional.of(blob.get().blobAsString());
-        }
-        return Optional.empty();
+    ) {
+        final GitTreeReader treeFilter = new GitTreeReader(repository).treeFilter(key);
+        return streamTree(branchRef, treeFilter).flatMap(s ->
+                Result.invert(s.findFirst()
+                        .map(NamedRevBlob::blobAsString)
+                        .map(Maybe::just)
+                        .orElseGet(Maybe::nothing)));
+    }
+
+    private Result<Stream<NamedRevBlob>> streamTree(final Ref branchRef, final GitTreeReader treeFilter) {
+        return treeFilter.stream(branchRef);
     }
 
     /**
@@ -125,11 +104,10 @@ class GitDBRepo {
      * @param key       the key to place the value under
      * @param value     the value
      * @return the id of the updated tree containing the update
-     * @throws IOException if there was an error writing the value
      */
-    ObjectId writeValue(final Ref branchRef, final String key, final String value) throws IOException {
-        final ObjectId blob = valueWriter.write(value.getBytes(StandardCharsets.UTF_8));
-        return keyWriter.write(key, blob, branchRef);
+    Result<ObjectId> writeValue(final Ref branchRef, final String key, final String value) {
+        return valueWriter.write(value.getBytes(StandardCharsets.UTF_8))
+                .flatMap(b -> keyWriter.write(key, b, branchRef));
     }
 
     /**
@@ -141,17 +119,37 @@ class GitDBRepo {
      * @param userName         the user name
      * @param userEmailAddress the user email address
      * @return the Ref of the updated branch
-     * @throws IOException if there was an error writing the branch
      */
-    Ref writeCommit(
+    Result<Ref> writeCommit(
             final Ref branchRef,
             final ObjectId tree,
             final String message,
             final String userName,
             final String userEmailAddress
-    ) throws IOException {
-        final ObjectId commitId = insertCommit(tree, message, userName, userEmailAddress, branchRef);
-        return headWriter.write(branchRef.getName(), commitId);
+    ) {
+        return insertCommit(tree, message, userName, userEmailAddress, branchRef)
+                .flatMap(cid -> Result.of(() ->
+                        headWriter.write(branchRef.getName(), cid)));
+    }
+
+    /**
+     * Insert a commit into the store, returning its unique id.
+     *
+     * @param treeId           id of the tree
+     * @param branchRef        the branch to commit to
+     * @param message          the message
+     * @param userName         the user name
+     * @param userEmailAddress the user email address
+     * @return the id of the commit
+     */
+    Result<ObjectId> insertCommit(
+            final ObjectId treeId,
+            final String message,
+            final String userName,
+            final String userEmailAddress,
+            final Ref branchRef
+    ) {
+        return commitWriter.write(treeId, branchRef, message, userName, userEmailAddress);
     }
 
     /**
@@ -162,14 +160,13 @@ class GitDBRepo {
      * @param initUser    the user name
      * @param initEmail   the user email address
      * @return the id of the commit
-     * @throws IOException if there was an error writing the commit
      */
-    ObjectId initialCommit(
+    Result<ObjectId> initialCommit(
             final ObjectId treeId,
             final String initMessage,
             final String initUser,
             final String initEmail
-    ) throws IOException {
+    ) {
         return commitWriter.write(treeId, ObjectId.zeroId(), initMessage, initUser, initEmail);
     }
 
@@ -182,9 +179,8 @@ class GitDBRepo {
      * @param key       the key to place the value under
      * @return an Optional containing the id of the updated tree containing the update, if the key was found, or an
      * empty Optional if there key was not found, the there was no changes made
-     * @throws IOException if there was an error writing the value
      */
-    Optional<ObjectId> removeKey(final Ref branchRef, final String key) throws IOException {
+    Result<Maybe<ObjectId>> removeKey(final Ref branchRef, final String key) {
         return keyRemover.remove(branchRef, key);
     }
 

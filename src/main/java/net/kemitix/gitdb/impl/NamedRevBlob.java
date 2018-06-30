@@ -24,7 +24,9 @@ package net.kemitix.gitdb.impl;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevBlob;
 
@@ -48,10 +50,15 @@ class NamedRevBlob {
      * Converts the blob to a String.
      *
      * @return a string
-     * @throws IOException of there was an error reading the blob
      */
-    String blobAsString() throws IOException {
-        return new String(repository.open(revBlob.getId(), Constants.OBJ_BLOB).getBytes());
+    Result<String> blobAsString() {
+        try {
+            return Result.ok(repository.open(revBlob.getId(), Constants.OBJ_BLOB))
+                    .map(ObjectLoader::getBytes)
+                    .map(String::new);
+        } catch (IOException e) {
+            return Result.error(e);
+        }
     }
 
 }

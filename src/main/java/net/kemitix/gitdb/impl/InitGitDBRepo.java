@@ -22,6 +22,7 @@
 package net.kemitix.gitdb.impl;
 
 import net.kemitix.gitdb.FormatVersion;
+import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.RepositoryCache;
@@ -50,35 +51,73 @@ class InitGitDBRepo {
      * Initialise a new GitDB repo.
      *
      * @param dbDir the directory to initialise the repo in
-     * @throws IOException if there is an error in creating the repo files
      */
-    static void create(final Path dbDir) throws IOException {
+    static Result<Void> create(final Path dbDir) {
         final InitGitDBRepo initRepo = new InitGitDBRepo();
-        final File validDbDir = initRepo.validDbDir(dbDir.toFile());
-        validDbDir.mkdirs();
-        try (Repository repository = RepositoryCache.FileKey.exact(validDbDir, FS.DETECTED).open(false)) {
-            repository.create(true);
-            initRepo.createInitialBranchOnMaster(repository);
-        }
+        return initRepo.validDbDir(dbDir.toFile())
+                .peek(File::mkdirs)
+                .flatMap(dir -> {
+                    try (Repository repository = RepositoryCache.FileKey.exact(dir, FS.DETECTED).open(false)) {
+                        repository.create(true);
+                        initRepo.createInitialBranchOnMaster(repository);
+                    } catch (IOException e) {
+                        return Result.error(e);
+                    }
+                    return Result.ok(null);
+                });
     }
 
-    private void createInitialBranchOnMaster(final Repository repository) throws IOException {
+    private Result<File> validDbDir(final File dbDir) {
+        return Result.ok(dbDir)
+                .flatMap(this::verifyIsNotAFile)
+                .flatMap(this::isEmptyIfExists);
+    }
+
+    private Result<Void> createInitialBranchOnMaster(final Repository repository) {
         final GitDBRepo repo = new GitDBRepo(repository);
-        final ValueWriter valueWriter = new ValueWriter(repository);
-        final ObjectId objectId = valueWriter.write(new FormatVersion().toBytes());
-        final ObjectId treeId = repo.insertNewTree(GIT_DB_VERSION, objectId);
-        final ObjectId commitId = repo.initialCommit(treeId, INIT_MESSAGE, INIT_USER, INIT_EMAIL);
-        createBranch(repository, commitId, MASTER);
+        return new ValueWriter(repository)
+                .write(new FormatVersion().toBytes())
+                .flatMap(oid -> repo.insertNewTree(GIT_DB_VERSION, oid))
+                .flatMap(tid -> repo.initialCommit(tid, INIT_MESSAGE, INIT_USER, INIT_EMAIL))
+                .flatMap(cid -> Result.of(() -> {
+                    createBranch(repository, cid, MASTER);
+                    return null;
+                }));
     }
 
-    private void createBranch(
+    private Result<File> verifyIsNotAFile(final File dbDir) {
+        if (dbDir.isFile()) {
+            return Result.error(new NotDirectoryException(dbDir.toString()));
+        }
+        return Result.ok(dbDir);
+    }
+
+    private Result<File> isEmptyIfExists(final File dbDir) {
+        if (dbDir.exists()) {
+            return Result.of(() -> {
+                        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(dbDir.toPath())) {
+                            if (directoryStream.iterator().hasNext()) {
+                                throw new DirectoryNotEmptyException(dbDir.toString());
+                            }
+                        }
+                        return dbDir;
+                    }
+            );
+        }
+        return Result.ok(dbDir);
+    }
+
+    private Result<Void> createBranch(
             final Repository repository,
             final ObjectId commitId,
             final String branchName
-    ) throws IOException {
+    ) {
         final Path branchRefPath = branchRefPath(repository, branchName);
         final byte[] commitIdBytes = commitId.name().getBytes(StandardCharsets.UTF_8);
-        Files.write(branchRefPath, commitIdBytes);
+        return Result.of(() -> {
+            Files.write(branchRefPath, commitIdBytes);
+            return null;
+        });
     }
 
     private Path branchRefPath(
@@ -89,27 +128,5 @@ class InitGitDBRepo {
                 .toPath()
                 .resolve(String.format(REFS_HEADS_FORMAT, branchName))
                 .toAbsolutePath();
-    }
-
-    private File validDbDir(final File dbDir) throws IOException {
-        verifyIsNotAFile(dbDir);
-        if (dbDir.exists()) {
-            verifyIsEmpty(dbDir);
-        }
-        return dbDir;
-    }
-
-    private void verifyIsEmpty(final File dbDir) throws IOException {
-        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(dbDir.toPath())) {
-            if (directoryStream.iterator().hasNext()) {
-                throw new DirectoryNotEmptyException(dbDir.toString());
-            }
-        }
-    }
-
-    private void verifyIsNotAFile(final File dbDir) throws NotDirectoryException {
-        if (dbDir.isFile()) {
-            throw new NotDirectoryException(dbDir.toString());
-        }
     }
 }

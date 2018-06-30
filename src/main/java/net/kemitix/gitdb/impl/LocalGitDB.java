@@ -22,8 +22,8 @@
 package net.kemitix.gitdb.impl;
 
 import net.kemitix.gitdb.GitDB;
+import net.kemitix.mon.result.Result;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 /**
@@ -40,9 +40,8 @@ public interface LocalGitDB extends GitDB {
      * @param userName         the user name
      * @param userEmailAddress the user email address
      * @return a GitDB instance for the created local gitdb
-     * @throws IOException if there {@code dbDir} is a file or a non-empty directory
      */
-    static GitDB init(final Path dbDir, final String userName, final String userEmailAddress) throws IOException {
+    static Result<GitDB> init(final Path dbDir, final String userName, final String userEmailAddress) {
         return LocalGitDBImpl.init(dbDir, userName, userEmailAddress);
     }
 
@@ -54,7 +53,7 @@ public interface LocalGitDB extends GitDB {
      * @param userEmailAddress the user email address
      * @return a GitDB instance for the created local gitdb
      */
-    static GitDB open(final Path dbDir, final String userName, final String userEmailAddress) {
+    static Result<GitDB> open(final Path dbDir, final String userName, final String userEmailAddress) {
         return LocalGitDBImpl.open(dbDir, userName, userEmailAddress);
     }
 

@@ -22,10 +22,10 @@
 package net.kemitix.gitdb;
 
 import net.kemitix.gitdb.impl.LocalGitDB;
+import net.kemitix.mon.maybe.Maybe;
+import net.kemitix.mon.result.Result;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Optional;
 
 /**
  * Main API for connecting to a Git repo as a database.
@@ -41,13 +41,12 @@ public interface GitDB {
      * @param userName         the user name
      * @param userEmailAddress the user email address
      * @return a GitDB instance for the created local gitdb
-     * @throws IOException if there {@code dbDir} is a file or a non-empty directory
      */
-    static GitDB initLocal(
+    static Result<GitDB> initLocal(
             final Path dbDir,
             final String userName,
             final String userEmailAddress
-    ) throws IOException {
+    ) {
         return LocalGitDB.init(dbDir, userName, userEmailAddress);
     }
 
@@ -59,7 +58,7 @@ public interface GitDB {
      * @param userEmailAddress the user email address
      * @return a GitDB instance for the local gitdb
      */
-    static GitDB openLocal(final Path dbDir, final String userName, final String userEmailAddress) {
+    static Result<GitDB> openLocal(final Path dbDir, final String userName, final String userEmailAddress) {
         return LocalGitDB.open(dbDir, userName, userEmailAddress);
     }
 
@@ -67,9 +66,8 @@ public interface GitDB {
      * Select the named branch.
      *
      * @param name the branch to select
-     * @return an Optional containing the branch if it exists
-     * @throws IOException if there is an error accessing the branch name
+     * @return an Result Maybe containing the branch if it exists
      */
-    Optional<GitDBBranch> branch(String name) throws IOException;
+    Result<Maybe<GitDBBranch>> branch(String name);
 
 }

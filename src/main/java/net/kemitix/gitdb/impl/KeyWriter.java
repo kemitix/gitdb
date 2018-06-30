@@ -21,9 +21,8 @@
 
 package net.kemitix.gitdb.impl;
 
+import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.lib.*;
-
-import java.io.IOException;
 
 /**
  * Writes Keys into the Git Repository.
@@ -48,42 +47,41 @@ class KeyWriter {
     /**
      * Write the first key into a new tree.
      *
-     * @param key the key
+     * @param key     the key
      * @param valueId the id of the value
      * @return the id of the new tree
-     * @throws IOException if there is an error writing the key
      */
-    ObjectId writeFirst(final String key, final ObjectId valueId) throws IOException {
+    Result<ObjectId> writeFirst(final String key, final ObjectId valueId) {
         return writeTree(key, valueId, new TreeFormatter());
     }
 
     /**
      * Write the key into a tree.
      *
-     * @param key the key
-     * @param valueId the id of the value
+     * @param key       the key
+     * @param valueId   the id of the value
      * @param branchRef the branch whose tree should be updated
      * @return the id of the updated tree
-     * @throws IOException if there is an error writing the key
      */
-    ObjectId write(final String key, final ObjectId valueId, final Ref branchRef) throws IOException {
-        return writeTree(key, valueId, getTreeFormatter(branchRef));
+    Result<ObjectId> write(final String key, final ObjectId valueId, final Ref branchRef) {
+        return getTreeFormatter(branchRef)
+                .flatMap(f -> writeTree(key, valueId, f));
     }
 
-    private TreeFormatter getTreeFormatter(final Ref branchRef) throws IOException {
+    private Result<TreeFormatter> getTreeFormatter(final Ref branchRef) {
         final TreeFormatter treeFormatter = new TreeFormatter();
         final GitTreeReader gitTreeReader = new GitTreeReader(repository);
-        gitTreeReader.stream(branchRef)
-                .forEach(item -> treeFormatter.append(item.getName(), item.getRevBlob()));
-        return treeFormatter;
+        return gitTreeReader.stream(branchRef)
+                .peek(s -> s.forEach(item -> treeFormatter.append(item.getName(), item.getRevBlob())))
+                .map(x -> treeFormatter);
     }
 
-    private ObjectId writeTree(
+    private Result<ObjectId> writeTree(
             final String key,
             final ObjectId valueId,
             final TreeFormatter treeFormatter
-    ) throws IOException {
+    ) {
         treeFormatter.append(key, FileMode.REGULAR_FILE, valueId);
-        return objectInserter.insert(treeFormatter);
+        return Result.of(() -> objectInserter.insert(treeFormatter));
     }
 }

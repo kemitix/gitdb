@@ -25,12 +25,12 @@ import com.github.zafarkhaja.semver.Version;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.kemitix.gitdb.GitDBBranch;
+import net.kemitix.mon.maybe.Maybe;
+import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 
-import java.io.IOException;
-import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -48,15 +48,6 @@ class GitDBBranchImpl implements GitDBBranch {
     private final String userEmailAddress;
     private final String name;
 
-    private static GitDBBranch select(
-            final Ref branchRef,
-            final GitDBRepo gitDBRepo,
-            final String userName,
-            final String userEmailAddress
-    ) {
-        return new GitDBBranchImpl(branchRef, gitDBRepo, userName, userEmailAddress, branchRef.getName());
-    }
-
     /**
      * Initialise the creation of new GitDBBranch instances.
      *
@@ -65,7 +56,7 @@ class GitDBBranchImpl implements GitDBBranch {
      * @param userEmailAddress the user's email address to record against changes
      * @return a Function for creating a GitDBBranch when supplied with a Ref for a branch
      */
-    static Function<Ref, GitDBBranch> init(
+    static Function<Ref, Result<GitDBBranch>> init(
             final Repository repository,
             final String userName,
             final String userEmailAddress
@@ -73,38 +64,52 @@ class GitDBBranchImpl implements GitDBBranch {
         return ref -> select(ref, new GitDBRepo(repository), userName, userEmailAddress);
     }
 
+    private static Result<GitDBBranch> select(
+            final Ref branchRef,
+            final GitDBRepo gitDBRepo,
+            final String userName,
+            final String userEmailAddress
+    ) {
+        return Result.ok(new GitDBBranchImpl(branchRef, gitDBRepo, userName, userEmailAddress, branchRef.getName()));
+    }
+
     @Override
-    public Optional<String> get(final String key) throws IOException {
+    public Result<Maybe<String>> get(final String key) {
         return gitDBRepo.readValue(branchRef, KEY_PREFIX + key);
     }
 
     @Override
-    public GitDBBranch put(final String key, final String value) throws IOException {
-        final ObjectId newTree = gitDBRepo.writeValue(branchRef, KEY_PREFIX + key, value);
+    public Result<GitDBBranch> put(final String key, final String value) {
         final String message = String.format("Add key [%s] = [%s]", key, value);
-        final Ref newBranch = gitDBRepo.writeCommit(branchRef, newTree, message, userName, userEmailAddress);
-        return select(newBranch, gitDBRepo, userName, userEmailAddress);
+        return gitDBRepo.writeValue(branchRef, KEY_PREFIX + key, value)
+                .flatMap(nt -> gitDBRepo.writeCommit(branchRef, nt, message, userName, userEmailAddress))
+                .flatMap(nb -> select(nb, gitDBRepo, userName, userEmailAddress));
     }
 
     @Override
-    public GitDBBranch remove(final String key) throws IOException {
-        final Optional<ObjectId> newTree = gitDBRepo.removeKey(branchRef, KEY_PREFIX + key);
-        if (newTree.isPresent()) {
-            final Ref newBranch =
-                    gitDBRepo.writeCommit(
-                            branchRef, newTree.get(),
-                            String.format("Remove Key [%s]", key),
-                            userName,
-                            userEmailAddress);
-            return select(newBranch, gitDBRepo, userName, userEmailAddress);
-        }
-        return this;
+    public Result<GitDBBranch> remove(final String key) {
+        return gitDBRepo.removeKey(branchRef, KEY_PREFIX + key).flatMap(treeId ->
+                writeRemoveKeyCommit(key, treeId)
+                        .map(selectUpdatedBranch())
+                        .orElse(Result.ok(this)));
+    }
+
+    private Maybe<Result<Ref>> writeRemoveKeyCommit(final String key, final Maybe<ObjectId> idMaybe) {
+        return idMaybe.map(objectId -> {
+            final String message = String.format("Remove Key [%s]", key);
+            return gitDBRepo.writeCommit(branchRef, objectId, message, userName, userEmailAddress);
+        });
+    }
+
+    private Function<Result<Ref>, Result<GitDBBranch>> selectUpdatedBranch() {
+        return refResult -> refResult.flatMap(ref ->
+                select(ref, gitDBRepo, userName, userEmailAddress));
     }
 
     @Override
-    public Optional<Version> getFormatVersion() throws IOException {
+    public Result<Maybe<Version>> getFormatVersion() {
         return gitDBRepo.readValue(branchRef, "GitDB.Version")
-                .map(Version::valueOf);
+                .map(version -> version.map(Version::valueOf));
     }
 
 }
