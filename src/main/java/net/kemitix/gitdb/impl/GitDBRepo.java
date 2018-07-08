@@ -128,8 +128,7 @@ class GitDBRepo {
             final String userEmailAddress
     ) {
         return insertCommit(tree, message, userName, userEmailAddress, branchRef)
-                .flatMap(cid -> Result.of(() ->
-                        headWriter.write(branchRef.getName(), cid)));
+                .flatMap(cid -> headWriter.write(branchRef.getName(), cid));
     }
 
     /**
