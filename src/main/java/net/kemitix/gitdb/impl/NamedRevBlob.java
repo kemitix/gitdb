@@ -30,8 +30,6 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevBlob;
 
-import java.io.IOException;
-
 /**
  * Represents the key/value pairs read from the tree.
  *
@@ -52,13 +50,9 @@ class NamedRevBlob {
      * @return a string
      */
     Result<String> blobAsString() {
-        try {
-            return Result.ok(repository.open(revBlob.getId(), Constants.OBJ_BLOB))
-                    .map(ObjectLoader::getBytes)
-                    .map(String::new);
-        } catch (IOException e) {
-            return Result.error(e);
-        }
+        return Result.of(() -> repository.open(revBlob.getId(), Constants.OBJ_BLOB))
+                .map(ObjectLoader::getBytes)
+                .map(String::new);
     }
 
 }
