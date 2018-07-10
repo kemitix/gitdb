@@ -26,7 +26,6 @@ import net.kemitix.mon.maybe.Maybe;
 import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.lib.*;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -101,10 +100,8 @@ class KeyRemover {
      * @return the name of the tree object.
      */
     private Result<ObjectId> insertTree(final TreeFormatter treeFormatter) {
-        try (ObjectInserter inserter = repository.getObjectDatabase().newInserter()) {
-            return Result.ok(inserter.insert(treeFormatter));
-        } catch (IOException e) {
-            return Result.error(e);
-        }
+        return Result.ok(repository.getObjectDatabase())
+                .map(ObjectDatabase::newInserter)
+                .andThen(inserter -> () -> inserter.insert(treeFormatter));
     }
 }
