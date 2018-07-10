@@ -81,29 +81,29 @@ class GitTreeReader {
         });
     }
 
-    private NamedRevBlob namedRevBlob(TreeWalk treeWalk, RevWalk revWalk) {
+    private NamedRevBlob namedRevBlob(final TreeWalk treeWalk, final RevWalk revWalk) {
         return new NamedRevBlob(
                 treeWalk.getNameString(),
                 revWalk.lookupBlob(treeWalk.getObjectId(0)),
                 repository);
     }
 
-    private Consumer<Void> setTreeFilter(TreeWalk treeWalk) {
+    private Consumer<Void> setTreeFilter(final TreeWalk treeWalk) {
         return x -> Optional.ofNullable(treeFilter).ifPresent(treeWalk::setFilter);
     }
 
-    private Consumer<Void> disableRecursion(TreeWalk treeWalk) {
+    private Consumer<Void> disableRecursion(final TreeWalk treeWalk) {
         return x -> treeWalk.setRecursive(false);
     }
 
-    private Function<RevTree, Result<Void>> addTreeTo(TreeWalk treeWalk) {
+    private Function<RevTree, Result<Void>> addTreeTo(final TreeWalk treeWalk) {
         return tree -> Result.of(() -> {
             treeWalk.addTree(tree);
             return null;
         });
     }
 
-    private Callable<RevCommit> parseBranchCommit(Ref branchRef, RevWalk revWalk) {
+    private Callable<RevCommit> parseBranchCommit(final Ref branchRef, final RevWalk revWalk) {
         return () -> revWalk.parseCommit(branchRef.getObjectId());
     }
 

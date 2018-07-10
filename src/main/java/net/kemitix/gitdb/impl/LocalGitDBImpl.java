@@ -94,7 +94,7 @@ final class LocalGitDBImpl implements GitDB, LocalGitDB {
                 .map(toLocalGitDB(userName, userEmailAddress));
     }
 
-    private static Result<Git> gitOpen(Path dbDir) {
+    private static Result<Git> gitOpen(final Path dbDir) {
         try {
             return Result.ok(Git.open(dbDir.toFile()));
         } catch (IOException e) {
