@@ -50,6 +50,7 @@ class InitGitDBRepo {
      * Initialise a new GitDB repo.
      *
      * @param dbDir the directory to initialise the repo in
+     * @return a Result containing the created Repository
      */
     static Result<Repository> create(final Path dbDir) {
         final InitGitDBRepo initRepo = new InitGitDBRepo();
