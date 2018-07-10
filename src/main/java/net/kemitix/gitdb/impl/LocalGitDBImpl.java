@@ -112,13 +112,9 @@ final class LocalGitDBImpl implements GitDB, LocalGitDB {
 
     @Override
     public Result<Maybe<GitDBBranch>> branch(final String name) {
-        try {
-            return Result.invert(Maybe.maybe(
-                    repository.findRef(name))
-                    .map(branchInit::apply));
-        } catch (IOException e) {
-            return Result.error(e);
-        }
+        return Result.maybeThen(
+                Result.of(() -> Maybe.maybe(repository.findRef(name))),
+                refMaybe -> Result.invert(refMaybe.map(branchInit)));
     }
 
 }
