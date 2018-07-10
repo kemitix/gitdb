@@ -29,7 +29,6 @@ import org.eclipse.jgit.lib.RepositoryCache;
 import org.eclipse.jgit.util.FS;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 
@@ -52,19 +51,14 @@ class InitGitDBRepo {
      *
      * @param dbDir the directory to initialise the repo in
      */
-    static Result<Void> create(final Path dbDir) {
+    static Result<Repository> create(final Path dbDir) {
         final InitGitDBRepo initRepo = new InitGitDBRepo();
         return initRepo.validDbDir(dbDir.toFile())
                 .peek(File::mkdirs)
-                .flatMap(dir -> {
-                    try (Repository repository = RepositoryCache.FileKey.exact(dir, FS.DETECTED).open(false)) {
-                        repository.create(true);
-                        initRepo.createInitialBranchOnMaster(repository);
-                    } catch (IOException e) {
-                        return Result.error(e);
-                    }
-                    return Result.ok(null);
-                });
+                .map(dir -> RepositoryCache.FileKey.exact(dir, FS.DETECTED))
+                .andThen(fileKey -> () -> fileKey.open(false))
+                .thenWith(repository -> () -> repository.create(true))
+                .thenWith(repository -> () -> initRepo.createInitialBranchOnMaster(repository));
     }
 
     private Result<File> validDbDir(final File dbDir) {
