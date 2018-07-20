@@ -27,6 +27,7 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,15 +50,23 @@ class HeadWriter {
      * @return the Ref of the new branch
      */
     Result<Ref> write(final String branchName, final ObjectId commitId) {
-        final Path branchRefPath = repository
-                .getDirectory()
-                .toPath()
-                .resolve(branchName)
-                .toAbsolutePath();
+        final Path branchRefPath = branchRefPath(branchName).toAbsolutePath();
         final byte[] commitIdBytes = commitId.name().getBytes(StandardCharsets.UTF_8);
         return Result.of(() -> {
             Files.write(branchRefPath, commitIdBytes);
             return repository.findRef(branchName);
         });
+    }
+
+    private Path branchRefPath(String branchName) {
+        return gitDirPath().resolve(branchName);
+    }
+
+    private Path gitDirPath() {
+        return gitDir().toPath();
+    }
+
+    private File gitDir() {
+        return repository.getDirectory();
     }
 }
