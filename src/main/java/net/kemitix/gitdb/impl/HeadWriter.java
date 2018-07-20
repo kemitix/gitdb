@@ -50,23 +50,38 @@ class HeadWriter {
      * @return the Ref of the new branch
      */
     Result<Ref> write(final String branchName, final ObjectId commitId) {
-        final Path branchRefPath = branchRefPath(branchName).toAbsolutePath();
-        final byte[] commitIdBytes = commitId.name().getBytes(StandardCharsets.UTF_8);
-        return Result.of(() -> {
-            Files.write(branchRefPath, commitIdBytes);
-            return repository.findRef(branchName);
-        });
+        return writeRef(branchName, commitId, repository)
+                .flatMap(x -> findRef(branchName, repository));
     }
 
-    private Path branchRefPath(String branchName) {
-        return gitDirPath().resolve(branchName);
+    private static Result<Path> writeRef(
+            final String branchName,
+            final ObjectId commitId,
+            final Repository repository
+    ) {
+        return Result.of(() ->
+                Files.write(
+                        branchRefPath(branchName, repository).toAbsolutePath(),
+                        commitIdBytes(commitId)));
     }
 
-    private Path gitDirPath() {
-        return gitDir().toPath();
+    private static Result<Ref> findRef(final String branchName, final Repository repository) {
+        return Result.of(() -> repository.findRef(branchName));
     }
 
-    private File gitDir() {
+    private static Path branchRefPath(final String branchName, final Repository repository) {
+        return gitDirPath(repository).resolve(branchName);
+    }
+
+    private static byte[] commitIdBytes(final ObjectId commitId) {
+        return commitId.name().getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static Path gitDirPath(final Repository repository) {
+        return gitDir(repository).toPath();
+    }
+
+    private static File gitDir(final Repository repository) {
         return repository.getDirectory();
     }
 }
