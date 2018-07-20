@@ -30,6 +30,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import static net.kemitix.conditional.Condition.where;
+
 /**
  * Remove Key from the Git Repository.
  *
@@ -66,11 +68,8 @@ class KeyRemover {
      * @return a Consumer
      */
     private static Consumer<NamedRevBlob> flagIfFound(final String key, final AtomicBoolean removed) {
-        return nvb -> {
-            if (nvb.getName().equals(key)) {
-                removed.set(true);
-            }
-        };
+        return nvb -> where(nvb.getName().equals(key))
+                .then(() -> removed.set(true));
     }
 
     /**
