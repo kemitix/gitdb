@@ -21,10 +21,10 @@
         <jgit.version>5.0.1.201806211838-r</jgit.version>
         <junit.version>5.2.0</junit.version>
         <assertj.version>3.10.0</assertj.version>
-        <mon.version>0.11.0</mon.version>
+        <mon.version>DEV-SNAPSHOT</mon.version>
         <mockito.version>2.19.1</mockito.version>
         <java-semver.version>0.9.0</java-semver.version>
-        <conditional.version>0.5.0</conditional.version>
+        <conditional.version>DEV-SNAPSHOT</conditional.version>
     </properties>
 
     <dependencies>
