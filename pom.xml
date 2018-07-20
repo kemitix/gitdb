@@ -10,19 +10,19 @@
 
     <properties>
         <java.version>8</java.version>
-        <tiles-maven-plugin.version>2.10</tiles-maven-plugin.version>
-        <kemitix-tiles.version>0.8.1</kemitix-tiles.version>
+        <tiles-maven-plugin.version>2.11</tiles-maven-plugin.version>
+        <kemitix-tiles.version>0.9.0</kemitix-tiles.version>
         <kemitix-checkstyle.version>4.1.1</kemitix-checkstyle.version>
-        <maven-surefire-plugin.version>2.21.0</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
         <junit-platform-surefire-provider.version>1.2.0</junit-platform-surefire-provider.version>
         <pitest-maven-plugin.version>1.4.0</pitest-maven-plugin.version>
         <pitest-junit5-plugin.version>0.5</pitest-junit5-plugin.version>
-        <lombok.version>1.16.20</lombok.version>
-        <jgit.version>4.11.0.201803080745-r</jgit.version>
+        <lombok.version>1.18.0</lombok.version>
+        <jgit.version>5.0.1.201806211838-r</jgit.version>
         <junit.version>5.2.0</junit.version>
         <assertj.version>3.10.0</assertj.version>
         <mon.version>0.11.0</mon.version>
-        <mockito.version>2.18.3</mockito.version>
+        <mockito.version>2.19.1</mockito.version>
         <java-semver.version>0.9.0</java-semver.version>
         <conditional.version>0.5.0</conditional.version>
     </properties>
