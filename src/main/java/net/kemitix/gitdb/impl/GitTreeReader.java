@@ -55,7 +55,7 @@ class GitTreeReader {
      * @param branchRef the branch to read
      * @return a stream of key/value pairs as NamedRevBlobs
      */
-    Result<Stream<NamedRevBlob>> stream(final Ref branchRef) {
+    Result<Stream<NamedRevBlob>> entries(final Ref branchRef) {
         final RevWalk revWalk = new RevWalk(repository);
         return Result.of(parseTree(branchRef, revWalk))
                 .andThen(configureFilter())

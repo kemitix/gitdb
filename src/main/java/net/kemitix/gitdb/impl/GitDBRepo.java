@@ -92,7 +92,7 @@ class GitDBRepo {
     }
 
     private Result<Stream<NamedRevBlob>> streamTree(final Ref branchRef, final GitTreeReader treeFilter) {
-        return treeFilter.stream(branchRef);
+        return treeFilter.entries(branchRef);
     }
 
     /**

@@ -24,11 +24,13 @@ package net.kemitix.gitdb.impl;
 import lombok.RequiredArgsConstructor;
 import net.kemitix.mon.maybe.Maybe;
 import net.kemitix.mon.result.Result;
+import net.kemitix.mon.result.WithResultContinuation;
 import org.eclipse.jgit.lib.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static net.kemitix.conditional.Condition.where;
 
@@ -52,12 +54,22 @@ class KeyRemover {
     Result<Maybe<ObjectId>> remove(final Ref branchRef, final String key) {
         final TreeFormatter treeFormatter = new TreeFormatter();
         final AtomicBoolean removed = new AtomicBoolean(false);
-        new GitTreeReader(repository)
-                .stream(branchRef)
-                .peek(s -> s.peek(flagIfFound(key, removed))
-                        .filter(isNotKey(key))
-                        .forEach(addToTree(treeFormatter)));
-        return insertTree(treeFormatter).maybe(oi -> removed.get());
+        return new GitTreeReader(repository)
+                .entries(branchRef)
+                .thenWith(s -> addOthersToTree(key, treeFormatter, removed, s))
+                .flatMap(s -> insertTree(treeFormatter))
+                .maybe(oi -> removed.get());
+    }
+
+    private static WithResultContinuation<Stream<NamedRevBlob>> addOthersToTree(
+            final String key,
+            final TreeFormatter treeFormatter,
+            final AtomicBoolean removed,
+            final Stream<NamedRevBlob> s) {
+        return () -> s
+                .peek(flagIfFound(key, removed))
+                .filter(isNotKey(key))
+                .forEach(addToTree(treeFormatter));
     }
 
     /**
