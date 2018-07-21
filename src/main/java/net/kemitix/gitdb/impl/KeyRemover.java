@@ -56,17 +56,17 @@ class KeyRemover {
         final AtomicBoolean removed = new AtomicBoolean(false);
         return new GitTreeReader(repository)
                 .entries(branchRef)
-                .thenWith(s -> addOthersToTree(key, treeFormatter, removed, s))
-                .flatMap(s -> insertTree(treeFormatter))
-                .maybe(oi -> removed.get());
+                .thenWith(entries -> addOthersToTree(key, treeFormatter, removed, entries))
+                .flatMap(x -> insertTree(treeFormatter))
+                .maybe(x -> removed.get());
     }
 
     private static WithResultContinuation<Stream<NamedRevBlob>> addOthersToTree(
             final String key,
             final TreeFormatter treeFormatter,
             final AtomicBoolean removed,
-            final Stream<NamedRevBlob> s) {
-        return () -> s
+            final Stream<NamedRevBlob> entryStream) {
+        return () -> entryStream
                 .peek(flagIfFound(key, removed))
                 .filter(isNotKey(key))
                 .forEach(addToTree(treeFormatter));
