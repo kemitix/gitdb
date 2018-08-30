@@ -24,12 +24,15 @@ package net.kemitix.gitdb.impl;
 import lombok.RequiredArgsConstructor;
 import net.kemitix.mon.maybe.Maybe;
 import net.kemitix.mon.result.Result;
+import net.kemitix.mon.result.WithResultContinuation;
 import org.eclipse.jgit.lib.*;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
+
+import static net.kemitix.conditional.Condition.where;
 
 /**
  * Remove Key from the Git Repository.
@@ -51,12 +54,22 @@ class KeyRemover {
     Result<Maybe<ObjectId>> remove(final Ref branchRef, final String key) {
         final TreeFormatter treeFormatter = new TreeFormatter();
         final AtomicBoolean removed = new AtomicBoolean(false);
-        new GitTreeReader(repository)
-                .stream(branchRef)
-                .peek(s -> s.peek(flagIfFound(key, removed))
-                        .filter(isNotKey(key))
-                        .forEach(addToTree(treeFormatter)));
-        return insertTree(treeFormatter).maybe(oi -> removed.get());
+        return new GitTreeReader(repository)
+                .entries(branchRef)
+                .thenWith(entries -> addOthersToTree(key, treeFormatter, removed, entries))
+                .flatMap(x -> insertTree(treeFormatter))
+                .maybe(x -> removed.get());
+    }
+
+    private static WithResultContinuation<Stream<NamedRevBlob>> addOthersToTree(
+            final String key,
+            final TreeFormatter treeFormatter,
+            final AtomicBoolean removed,
+            final Stream<NamedRevBlob> entryStream) {
+        return () -> entryStream
+                .peek(flagIfFound(key, removed))
+                .filter(isNotKey(key))
+                .forEach(addToTree(treeFormatter));
     }
 
     /**
@@ -67,11 +80,8 @@ class KeyRemover {
      * @return a Consumer
      */
     private static Consumer<NamedRevBlob> flagIfFound(final String key, final AtomicBoolean removed) {
-        return nvb -> {
-            if (nvb.getName().equals(key)) {
-                removed.set(true);
-            }
-        };
+        return nvb -> where(nvb.getName().equals(key))
+                .then(() -> removed.set(true));
     }
 
     /**
@@ -101,10 +111,8 @@ class KeyRemover {
      * @return the name of the tree object.
      */
     private Result<ObjectId> insertTree(final TreeFormatter treeFormatter) {
-        try (ObjectInserter inserter = repository.getObjectDatabase().newInserter()) {
-            return Result.ok(inserter.insert(treeFormatter));
-        } catch (IOException e) {
-            return Result.error(e);
-        }
+        return Result.ok(repository.getObjectDatabase())
+                .map(ObjectDatabase::newInserter)
+                .andThen(inserter -> () -> inserter.insert(treeFormatter));
     }
 }
