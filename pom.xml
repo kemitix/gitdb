@@ -18,11 +18,11 @@
         <pitest-maven-plugin.version>1.4.0</pitest-maven-plugin.version>
         <pitest-junit5-plugin.version>0.5</pitest-junit5-plugin.version>
         <lombok.version>1.18.2</lombok.version>
-        <jgit.version>5.0.1.201806211838-r</jgit.version>
+        <jgit.version>5.0.2.201807311906-r</jgit.version>
         <junit.version>5.2.0</junit.version>
         <assertj.version>3.11.1</assertj.version>
-        <mon.version>0.11.0-0.11.0</mon.version>
-        <mockito.version>2.19.1</mockito.version>
+        <mon.version>0.11.0</mon.version>
+        <mockito.version>2.21.0</mockito.version>
         <java-semver.version>0.9.0</java-semver.version>
         <conditional.version>DEV-SNAPSHOT</conditional.version>
         <digraph-dependency.basePackage>net.kemitix.gitdb</digraph-dependency.basePackage>
