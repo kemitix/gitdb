@@ -94,7 +94,7 @@ final class LocalGitDBImpl implements GitDB, LocalGitDB {
                 .map(toLocalGitDB(userName, userEmailAddress));
     }
 
-    private static Result<Git> gitOpen(Path dbDir) {
+    private static Result<Git> gitOpen(final Path dbDir) {
         try {
             return Result.ok(Git.open(dbDir.toFile()));
         } catch (IOException e) {
@@ -112,13 +112,9 @@ final class LocalGitDBImpl implements GitDB, LocalGitDB {
 
     @Override
     public Result<Maybe<GitDBBranch>> branch(final String name) {
-        try {
-            return Result.invert(Maybe.maybe(
-                    repository.findRef(name))
-                    .map(branchInit::apply));
-        } catch (IOException e) {
-            return Result.error(e);
-        }
+        return Result.flatMapMaybe(
+                Result.of(() -> Maybe.maybe(repository.findRef(name))),
+                refMaybe -> Result.invert(refMaybe.map(branchInit)));
     }
 
 }

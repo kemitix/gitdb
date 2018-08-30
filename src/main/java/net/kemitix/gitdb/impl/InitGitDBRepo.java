@@ -23,22 +23,25 @@ package net.kemitix.gitdb.impl;
 
 import net.kemitix.gitdb.FormatVersion;
 import net.kemitix.mon.result.Result;
+import net.kemitix.mon.result.WithResultContinuation;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.RepositoryCache;
 import org.eclipse.jgit.util.FS;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.concurrent.Callable;
+
+import static net.kemitix.conditional.Condition.where;
 
 /**
  * Initialise a new GitDB Repo.
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
-class InitGitDBRepo {
+final class InitGitDBRepo {
 
     private static final String INIT_MESSAGE = "Initialise GitDB v1";
     private static final String INIT_USER = "GitDB";
@@ -47,80 +50,84 @@ class InitGitDBRepo {
     private static final String GIT_DB_VERSION = "GitDB.Version";
     private static final String REFS_HEADS_FORMAT = "refs/heads/%s";
 
+    private InitGitDBRepo() {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * Initialise a new GitDB repo.
      *
      * @param dbDir the directory to initialise the repo in
+     * @return a Result containing the created Repository
      */
-    static Result<Void> create(final Path dbDir) {
-        final InitGitDBRepo initRepo = new InitGitDBRepo();
-        return initRepo.validDbDir(dbDir.toFile())
+    static Result<Repository> create(final Path dbDir) {
+        return validDbDir(dbDir.toFile())
                 .peek(File::mkdirs)
-                .flatMap(dir -> {
-                    try (Repository repository = RepositoryCache.FileKey.exact(dir, FS.DETECTED).open(false)) {
-                        repository.create(true);
-                        initRepo.createInitialBranchOnMaster(repository);
-                    } catch (IOException e) {
-                        return Result.error(e);
+                .map(InitGitDBRepo::exactDirectory)
+                .andThen(InitGitDBRepo::openRepository)
+                .thenWith(InitGitDBRepo::createRepoDirectory)
+                .thenWith(InitGitDBRepo::createInitialMasterBranch);
+    }
+
+    private static Result<File> validDbDir(final File dbDir) {
+        return Result.ok(dbDir)
+                .flatMap(InitGitDBRepo::isNotAFile)
+                .flatMap(InitGitDBRepo::ifExistsThenIsEmpty);
+    }
+
+    private static Result<File> isNotAFile(final File dbDir) {
+        return Result.ok(dbDir)
+                .thenWith(dir -> () -> where(dir.isFile()).thenThrow(new NotDirectoryException(dbDir.toString())));
+    }
+
+    private static Result<File> ifExistsThenIsEmpty(final File dbDir) {
+        return Result.ok(dbDir)
+                .thenWith(dir -> () -> {
+                    if (dir.exists()) {
+                        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(dbDir.toPath())) {
+                            where(directoryStream.iterator().hasNext())
+                                    .thenThrow(new DirectoryNotEmptyException(dbDir.toString()));
+                        }
                     }
-                    return Result.ok(null);
                 });
     }
 
-    private Result<File> validDbDir(final File dbDir) {
-        return Result.ok(dbDir)
-                .flatMap(this::verifyIsNotAFile)
-                .flatMap(this::isEmptyIfExists);
+    private static RepositoryCache.FileKey exactDirectory(final File dir) {
+        return RepositoryCache.FileKey.exact(dir, FS.DETECTED);
     }
 
-    private Result<Void> createInitialBranchOnMaster(final Repository repository) {
-        final GitDBRepo repo = new GitDBRepo(repository);
-        return new ValueWriter(repository)
-                .write(new FormatVersion().toBytes())
-                .flatMap(oid -> repo.insertNewTree(GIT_DB_VERSION, oid))
-                .flatMap(tid -> repo.initialCommit(tid, INIT_MESSAGE, INIT_USER, INIT_EMAIL))
-                .flatMap(cid -> Result.of(() -> {
-                    createBranch(repository, cid, MASTER);
-                    return null;
-                }));
+    private static Callable<Repository> openRepository(final RepositoryCache.FileKey fileKey) {
+        return () -> fileKey.open(false);
     }
 
-    private Result<File> verifyIsNotAFile(final File dbDir) {
-        if (dbDir.isFile()) {
-            return Result.error(new NotDirectoryException(dbDir.toString()));
-        }
-        return Result.ok(dbDir);
+    private static WithResultContinuation<Repository> createRepoDirectory(final Repository repository) {
+        return () -> repository.create(true);
     }
 
-    private Result<File> isEmptyIfExists(final File dbDir) {
-        if (dbDir.exists()) {
-            return Result.of(() -> {
-                        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(dbDir.toPath())) {
-                            if (directoryStream.iterator().hasNext()) {
-                                throw new DirectoryNotEmptyException(dbDir.toString());
-                            }
-                        }
-                        return dbDir;
-                    }
-            );
-        }
-        return Result.ok(dbDir);
+    private static WithResultContinuation<Repository> createInitialMasterBranch(
+            final Repository repository
+    ) {
+        return () -> {
+            final GitDBRepo repo = new GitDBRepo(repository);
+            new ValueWriter(repository)
+                    .write(new FormatVersion().toBytes())
+                    .flatMap(oid -> repo.insertNewTree(GIT_DB_VERSION, oid))
+                    .flatMap(tid -> repo.initialCommit(tid, INIT_MESSAGE, INIT_USER, INIT_EMAIL))
+                    .flatMap(cid -> createBranch(repository, cid, MASTER));
+        };
     }
 
-    private Result<Void> createBranch(
+    private static Result<Path> createBranch(
             final Repository repository,
             final ObjectId commitId,
             final String branchName
     ) {
         final Path branchRefPath = branchRefPath(repository, branchName);
         final byte[] commitIdBytes = commitId.name().getBytes(StandardCharsets.UTF_8);
-        return Result.of(() -> {
-            Files.write(branchRefPath, commitIdBytes);
-            return null;
-        });
+        return Result.of(() -> Files.write(branchRefPath, commitIdBytes));
     }
 
-    private Path branchRefPath(
+    private static Path branchRefPath(
             final Repository repository,
             final String branchName
     ) {

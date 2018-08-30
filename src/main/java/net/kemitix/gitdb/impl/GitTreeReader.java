@@ -26,7 +26,6 @@ import lombok.RequiredArgsConstructor;
 import net.kemitix.mon.result.Result;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
@@ -35,7 +34,6 @@ import org.eclipse.jgit.treewalk.filter.TreeFilter;
 
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -57,54 +55,43 @@ class GitTreeReader {
      * @param branchRef the branch to read
      * @return a stream of key/value pairs as NamedRevBlobs
      */
-    Result<Stream<NamedRevBlob>> stream(final Ref branchRef) {
-        final TreeWalk treeWalk = new TreeWalk(repository);
+    Result<Stream<NamedRevBlob>> entries(final Ref branchRef) {
         final RevWalk revWalk = new RevWalk(repository);
-        return Result.of(parseBranchCommit(branchRef, revWalk))
-                .map(RevCommit::getTree)
-                .flatMap(addTreeTo(treeWalk))
-                .peek(disableRecursion(treeWalk))
-                .peek(setTreeFilter(treeWalk))
-                .flatMap(streamMatching(treeWalk, revWalk));
+        return Result.of(parseTree(branchRef, revWalk))
+                .andThen(configureFilter())
+                .andThen(buildStream(revWalk));
     }
 
-    private Function<Void, Result<Stream<NamedRevBlob>>> streamMatching(
-            final TreeWalk treeWalk,
-            final RevWalk revWalk
-    ) {
-        return x -> Result.of(() -> {
+    private Callable<RevTree> parseTree(final Ref branchRef, final RevWalk revWalk) {
+        return () -> revWalk.parseCommit(branchRef.getObjectId()).getTree();
+    }
+
+    private Function<RevTree, Callable<TreeWalk>> configureFilter() {
+        return tree -> () -> {
+            final TreeWalk treeWalk = new TreeWalk(repository);
+            treeWalk.addTree(tree);
+            treeWalk.setRecursive(false);
+            Optional.ofNullable(treeFilter)
+                    .ifPresent(treeWalk::setFilter);
+            return treeWalk;
+        };
+    }
+
+    private Function<TreeWalk, Callable<Stream<NamedRevBlob>>> buildStream(final RevWalk revWalk) {
+        return treeWalk -> () -> {
             final Stream.Builder<NamedRevBlob> builder = Stream.builder();
             while (treeWalk.next()) {
                 builder.add(namedRevBlob(treeWalk, revWalk));
             }
             return builder.build();
-        });
+        };
     }
 
-    private NamedRevBlob namedRevBlob(TreeWalk treeWalk, RevWalk revWalk) {
+    private NamedRevBlob namedRevBlob(final TreeWalk treeWalk, final RevWalk revWalk) {
         return new NamedRevBlob(
                 treeWalk.getNameString(),
                 revWalk.lookupBlob(treeWalk.getObjectId(0)),
                 repository);
-    }
-
-    private Consumer<Void> setTreeFilter(TreeWalk treeWalk) {
-        return x -> Optional.ofNullable(treeFilter).ifPresent(treeWalk::setFilter);
-    }
-
-    private Consumer<Void> disableRecursion(TreeWalk treeWalk) {
-        return x -> treeWalk.setRecursive(false);
-    }
-
-    private Function<RevTree, Result<Void>> addTreeTo(TreeWalk treeWalk) {
-        return tree -> Result.of(() -> {
-            treeWalk.addTree(tree);
-            return null;
-        });
-    }
-
-    private Callable<RevCommit> parseBranchCommit(Ref branchRef, RevWalk revWalk) {
-        return () -> revWalk.parseCommit(branchRef.getObjectId());
     }
 
     /**
