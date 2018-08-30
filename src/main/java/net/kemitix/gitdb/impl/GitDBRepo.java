@@ -85,14 +85,14 @@ class GitDBRepo {
     ) {
         final GitTreeReader treeFilter = new GitTreeReader(repository).treeFilter(key);
         return streamTree(branchRef, treeFilter).flatMap(s ->
-                Result.invert(s.findFirst()
+                Result.swap(s.findFirst()
                         .map(NamedRevBlob::blobAsString)
                         .map(Maybe::just)
                         .orElseGet(Maybe::nothing)));
     }
 
     private Result<Stream<NamedRevBlob>> streamTree(final Ref branchRef, final GitTreeReader treeFilter) {
-        return treeFilter.stream(branchRef);
+        return treeFilter.entries(branchRef);
     }
 
     /**

@@ -71,7 +71,7 @@ class KeyWriter {
     private Result<TreeFormatter> getTreeFormatter(final Ref branchRef) {
         final TreeFormatter treeFormatter = new TreeFormatter();
         final GitTreeReader gitTreeReader = new GitTreeReader(repository);
-        return gitTreeReader.stream(branchRef)
+        return gitTreeReader.entries(branchRef)
                 .peek(s -> s.forEach(item -> treeFormatter.append(item.getName(), item.getRevBlob())))
                 .map(x -> treeFormatter);
     }
