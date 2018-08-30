@@ -16,7 +16,7 @@
         <maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
         <junit-platform-surefire-provider.version>1.2.0</junit-platform-surefire-provider.version>
         <pitest-maven-plugin.version>1.4.0</pitest-maven-plugin.version>
-        <pitest-junit5-plugin.version>0.5</pitest-junit5-plugin.version>
+        <pitest-junit5-plugin.version>0.7</pitest-junit5-plugin.version>
         <lombok.version>1.18.2</lombok.version>
         <jgit.version>5.0.1.201806211838-r</jgit.version>
         <junit.version>5.2.0</junit.version>
