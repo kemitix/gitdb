@@ -21,7 +21,7 @@
         <jgit.version>5.0.2.201807311906-r</jgit.version>
         <junit.version>5.2.0</junit.version>
         <assertj.version>3.11.1</assertj.version>
-        <mon.version>0.11.0</mon.version>
+        <mon.version>0.12.0</mon.version>
         <mockito.version>2.21.0</mockito.version>
         <java-semver.version>0.9.0</java-semver.version>
         <conditional.version>0.7.0</conditional.version>
