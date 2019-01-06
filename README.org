@@ -1,0 +1,10 @@
+* GitDB - Git as a (Stupid) NoSQL Database
+
+  An experiment in working with a bare Git repo to do something that
+  probably shouldn't be used in production.
+
+  [[https://oss.sonatype.org/content/repositories/releases/net/kemitix/gitdb][file:https://img.shields.io/nexus/r/https/oss.sonatype.org/net.kemitix/gitdb.svg?style=for-the-badge]]
+  [[https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22net.kemitix%22%20AND%20a%3A%22gitdb%22][file:https://img.shields.io/maven-central/v/net.kemitix/gitdb.svg?style=for-the-badge]]
+  [[http://i.jpeek.org/net.kemitix/gitdb/index.html][file:http://i.jpeek.org/net.kemitix/gitdb/badge.svg]]
+
+  Inspired by the [[https://www.youtube.com/watch?v=nPPlyjMlQ34][presentation]] and [[https://www.kenneth-truyers.net/2016/10/13/git-nosql-database/][blog post]] by Kenneth Truyers.
