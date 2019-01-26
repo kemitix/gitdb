@@ -32,6 +32,7 @@ import org.eclipse.jgit.util.FS;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import static net.kemitix.conditional.Condition.where;
@@ -82,14 +83,10 @@ final class InitGitDBRepo {
 
     private static Result<File> ifExistsThenIsEmpty(final File dbDir) {
         return Result.ok(dbDir)
-                .thenWith(dir -> () -> {
-                    if (dir.exists()) {
-                        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(dbDir.toPath())) {
-                            where(directoryStream.iterator().hasNext())
-                                    .thenThrow(new DirectoryNotEmptyException(dbDir.toString()));
-                        }
-                    }
-                });
+                .thenWith(dir -> () ->
+                        where(dir.exists())
+                                .and(() -> Optional.ofNullable(dir.listFiles()).orElse(new File[0]).length != 0)
+                                .thenThrow(new DirectoryNotEmptyException(dir.toString())));
     }
 
     private static RepositoryCache.FileKey exactDirectory(final File dir) {
