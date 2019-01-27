@@ -34,7 +34,7 @@ import org.eclipse.jgit.lib.Repository;
 import java.util.function.Function;
 
 /**
- * API for interacting with a branch in a GirDB.
+ * API for interacting with a branch in a GitDB.
  *
  * @author Paul Campbell (pcampbell@kemitix.net)
  */
@@ -71,6 +71,11 @@ class GitDBBranchImpl implements GitDBBranch {
             final String userEmailAddress
     ) {
         return Result.ok(new GitDBBranchImpl(branchRef, gitDBRepo, userName, userEmailAddress, branchRef.getName()));
+    }
+
+    @Override
+    public Result<String> name() {
+        return Result.ok(name);
     }
 
     @Override

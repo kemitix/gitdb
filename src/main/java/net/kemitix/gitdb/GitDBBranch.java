@@ -33,6 +33,13 @@ import net.kemitix.mon.result.Result;
 public interface GitDBBranch {
 
     /**
+     * The name of the branch.
+     *
+     * @return the branch name
+     */
+    Result<String> name();
+
+    /**
      * Lookup a value for the key.
      *
      * @param key the key to lookup

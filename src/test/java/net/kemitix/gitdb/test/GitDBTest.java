@@ -392,4 +392,17 @@ class GitDBTest implements WithAssertions {
                 );
     }
 
+    @Test
+    void selectBranch_branchExists_thenBranchName() throws Throwable {
+        //given
+        final Path dbDir = dirDoesNotExist();
+        final Result<GitDB> gitDb = gitDB(dbDir);
+        //when
+        final Result<Maybe<String>> branchName = gitDb.flatMap(selectBranch("master"))
+                .flatMap(branch -> Result.swap(branch.map(GitDBBranch::name)));
+        //then
+        assertThat(branchName.orElseThrow().toOptional()).as("Branch name is master")
+                .contains("refs/heads/master");
+    }
+
 }
