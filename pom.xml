@@ -10,7 +10,7 @@
 
     <properties>
         <java.version>8</java.version>
-        <tiles-maven-plugin.version>2.12</tiles-maven-plugin.version>
+        <tiles-maven-plugin.version>2.13</tiles-maven-plugin.version>
         <kemitix-maven-tiles.version>2.1.3</kemitix-maven-tiles.version>
         <kemitix-checkstyle.version>4.1.1</kemitix-checkstyle.version>
         <maven-surefire-plugin.version>2.22.1</maven-surefire-plugin.version>
