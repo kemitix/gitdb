@@ -15,7 +15,7 @@
         <kemitix-checkstyle.version>4.1.1</kemitix-checkstyle.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <pitest-maven-plugin.version>1.4.8</pitest-maven-plugin.version>
-        <pitest-junit5-plugin.version>0.8</pitest-junit5-plugin.version>
+        <pitest-junit5-plugin.version>0.9</pitest-junit5-plugin.version>
         <lombok.version>1.18.8</lombok.version>
         <jgit.version>5.3.1.201904271842-r</jgit.version>
         <assertj.version>3.12.2</assertj.version>
