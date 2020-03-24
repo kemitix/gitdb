@@ -17,7 +17,7 @@
         <pitest-maven-plugin.version>1.4.10</pitest-maven-plugin.version>
         <pitest-junit5-plugin.version>0.12</pitest-junit5-plugin.version>
         <lombok.version>1.18.12</lombok.version>
-        <jgit.version>5.5.1.201910021850-r</jgit.version>
+        <jgit.version>5.7.0.202003110725-r</jgit.version>
         <assertj.version>3.15.0</assertj.version>
         <junit.version>5.6.1</junit.version>
         <mon.version>2.1.0</mon.version>
