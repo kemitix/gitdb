@@ -14,7 +14,7 @@
         <kemitix-maven-tiles.version>2.1.3</kemitix-maven-tiles.version>
         <kemitix-checkstyle.version>4.1.1</kemitix-checkstyle.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
-        <pitest-maven-plugin.version>1.4.10</pitest-maven-plugin.version>
+        <pitest-maven-plugin.version>1.5.0</pitest-maven-plugin.version>
         <pitest-junit5-plugin.version>0.12</pitest-junit5-plugin.version>
         <lombok.version>1.18.12</lombok.version>
         <jgit.version>5.7.0.202003110725-r</jgit.version>
