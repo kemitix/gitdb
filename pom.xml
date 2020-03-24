@@ -20,7 +20,7 @@
         <jgit.version>5.5.1.201910021850-r</jgit.version>
         <assertj.version>3.13.2</assertj.version>
         <junit.version>5.5.2</junit.version>
-        <mon.version>2.0.0</mon.version>
+        <mon.version>2.1.0</mon.version>
         <mockito.version>3.1.0</mockito.version>
         <java-semver.version>0.9.0</java-semver.version>
         <conditional.version>1.0.0</conditional.version>
