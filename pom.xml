@@ -20,7 +20,6 @@
         <tiles-maven-plugin.version>2.16</tiles-maven-plugin.version>
         <kemitix-maven-tiles.version>2.4.1</kemitix-maven-tiles.version>
         <kemitix-checkstyle.version>5.4.0</kemitix-checkstyle.version>
-        <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <pitest-maven-plugin.version>1.5.0</pitest-maven-plugin.version>
         <pitest-junit5-plugin.version>0.12</pitest-junit5-plugin.version>
         <lombok.version>1.18.12</lombok.version>
@@ -111,11 +110,6 @@
                         <tile>net.kemitix.checkstyle:tile:${kemitix-checkstyle.version}</tile>
                     </tiles>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven-surefire-plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.pitest</groupId>
