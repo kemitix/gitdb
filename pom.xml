@@ -17,7 +17,7 @@
         <java.version>1.8</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <tiles-maven-plugin.version>2.17</tiles-maven-plugin.version>
+        <tiles-maven-plugin.version>2.18</tiles-maven-plugin.version>
         <kemitix-maven-tiles.version>2.5.0</kemitix-maven-tiles.version>
         <kemitix-checkstyle.version>5.4.0</kemitix-checkstyle.version>
         <lombok.version>1.18.12</lombok.version>
