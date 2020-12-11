@@ -21,7 +21,7 @@
         <kemitix-maven-tiles.version>2.5.0</kemitix-maven-tiles.version>
         <kemitix-checkstyle.version>5.4.0</kemitix-checkstyle.version>
         <lombok.version>1.18.16</lombok.version>
-        <jgit.version>5.9.0.202009080501-r</jgit.version>
+        <jgit.version>5.10.0.202012080955-r</jgit.version>
         <assertj.version>3.18.1</assertj.version>
         <junit.version>5.7.0</junit.version>
         <mon.version>2.2.0</mon.version>
