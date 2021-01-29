@@ -20,7 +20,7 @@
         <tiles-maven-plugin.version>2.19</tiles-maven-plugin.version>
         <kemitix-maven-tiles.version>2.5.0</kemitix-maven-tiles.version>
         <kemitix-checkstyle.version>5.4.0</kemitix-checkstyle.version>
-        <lombok.version>1.18.16</lombok.version>
+        <lombok.version>1.18.18</lombok.version>
         <jgit.version>5.10.0.202012080955-r</jgit.version>
         <assertj.version>3.19.0</assertj.version>
         <junit.version>5.7.0</junit.version>
