@@ -22,7 +22,7 @@
         <kemitix-checkstyle.version>5.4.0</kemitix-checkstyle.version>
         <lombok.version>1.18.20</lombok.version>
         <jgit.version>5.12.0.202106070339-r</jgit.version>
-        <assertj.version>3.20.1</assertj.version>
+        <assertj.version>3.20.2</assertj.version>
         <junit.version>5.7.2</junit.version>
         <mon.version>2.3.0</mon.version>
         <mockito.version>3.11.1</mockito.version>
